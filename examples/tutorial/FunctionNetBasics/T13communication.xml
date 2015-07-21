@@ -1,0 +1,611 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<pnml>
+<net id="Net-One" type="PrT net">
+<tokenclass id="Default" enabled="true" red="0" green="0" blue="0"/>
+<labels x="113" y="495" width="348" height="17" border="true">
+<text>ASSERTION readyToSend =&gt; not ackReceived</text>
+</labels>
+<labels x="112" y="460" width="227" height="26" border="false">
+<text>INIT readyToSend, readyToReceive</text>
+</labels>
+<labels x="25" y="25" width="493" height="65" border="true">
+<text>This net models a simple communication protocol between two parties. It is not concerned about the contents of messages. It uses the following building blocks:
+(1) sequence: sendMessage-&gt;receiveAck or receiveMessage-&gt;sendAck
+(2) parallel/concurrency: process 1 || process 2
+(3) loop on both sides     </text>
+</labels>
+<place id="P1">
+<graphics>
+<position x="150.0" y="132.50000000000003"/>
+</graphics>
+<name>
+<value>readyToSend</value>
+<graphics>
+<offset x="51.0" y="-13.0"/>
+</graphics>
+</name>
+<initialMarking>
+<value>Default,</value>
+<graphics>
+<offset x="0.0" y="0.0"/>
+</graphics>
+</initialMarking>
+<capacity>
+<value>0</value>
+</capacity>
+</place>
+<place id="P2">
+<graphics>
+<position x="144.16666666666669" y="252.50000000000006"/>
+</graphics>
+<name>
+<value>waitForAck</value>
+<graphics>
+<offset x="101.0" y="13.0"/>
+</graphics>
+</name>
+<initialMarking>
+<value>Default,</value>
+<graphics>
+<offset x="0.0" y="0.0"/>
+</graphics>
+</initialMarking>
+<capacity>
+<value>0</value>
+</capacity>
+</place>
+<place id="P3">
+<graphics>
+<position x="150.0" y="402.5"/>
+</graphics>
+<name>
+<value>ackReceived</value>
+<graphics>
+<offset x="104.0" y="24.0"/>
+</graphics>
+</name>
+<initialMarking>
+<value>Default,</value>
+<graphics>
+<offset x="0.0" y="0.0"/>
+</graphics>
+</initialMarking>
+<capacity>
+<value>0</value>
+</capacity>
+</place>
+<place id="P4">
+<graphics>
+<position x="365.83333333333337" y="132.50000000000003"/>
+</graphics>
+<name>
+<value>readyToReceive</value>
+<graphics>
+<offset x="59.0" y="-9.0"/>
+</graphics>
+</name>
+<initialMarking>
+<value>Default,</value>
+<graphics>
+<offset x="0.0" y="0.0"/>
+</graphics>
+</initialMarking>
+<capacity>
+<value>0</value>
+</capacity>
+</place>
+<place id="P5">
+<graphics>
+<position x="360.0" y="267.50000000000006"/>
+</graphics>
+<name>
+<value>messageReceived</value>
+<graphics>
+<offset x="12.0" y="39.0"/>
+</graphics>
+</name>
+<initialMarking>
+<value>Default,</value>
+<graphics>
+<offset x="0.0" y="0.0"/>
+</graphics>
+</initialMarking>
+<capacity>
+<value>0</value>
+</capacity>
+</place>
+<place id="P6">
+<graphics>
+<position x="365.83333333333337" y="402.5"/>
+</graphics>
+<name>
+<value>ackSent</value>
+<graphics>
+<offset x="-3.0" y="24.0"/>
+</graphics>
+</name>
+<initialMarking>
+<value>Default,</value>
+<graphics>
+<offset x="0.0" y="0.0"/>
+</graphics>
+</initialMarking>
+<capacity>
+<value>0</value>
+</capacity>
+</place>
+<place id="P7">
+<graphics>
+<position x="255.0" y="192.5"/>
+</graphics>
+<name>
+<value>msgBuffer</value>
+<graphics>
+<offset x="78.0" y="38.0"/>
+</graphics>
+</name>
+<initialMarking>
+<value>Default,</value>
+<graphics>
+<offset x="0.0" y="0.0"/>
+</graphics>
+</initialMarking>
+<capacity>
+<value>0</value>
+</capacity>
+</place>
+<place id="P8">
+<graphics>
+<position x="255.0" y="327.50000000000006"/>
+</graphics>
+<name>
+<value>ackBuffer</value>
+<graphics>
+<offset x="92.0" y="22.0"/>
+</graphics>
+</name>
+<initialMarking>
+<value>Default,</value>
+<graphics>
+<offset x="0.0" y="0.0"/>
+</graphics>
+</initialMarking>
+<capacity>
+<value>0</value>
+</capacity>
+</place>
+<transition id="process1">
+<graphics>
+<position x="60.0" y="252.50000000000006"/>
+</graphics>
+<name>
+<value>process1</value>
+<graphics>
+<offset x="84.0" y="30.0"/>
+</graphics>
+</name>
+<orientation>
+<value>90</value>
+</orientation>
+<guard>
+<value/>
+</guard>
+<effect>
+<value/>
+</effect>
+<subnet>
+<value/>
+</subnet>
+<rate>
+<value>1.0</value>
+</rate>
+<timed>
+<value>true</value>
+</timed>
+<infiniteServer>
+<value>false</value>
+</infiniteServer>
+<priority>
+<value>1</value>
+</priority>
+</transition>
+<transition id="process2">
+<graphics>
+<position x="465.0" y="267.50000000000006"/>
+</graphics>
+<name>
+<value>process2</value>
+<graphics>
+<offset x="10.0" y="0.0"/>
+</graphics>
+</name>
+<orientation>
+<value>90</value>
+</orientation>
+<guard>
+<value/>
+</guard>
+<effect>
+<value/>
+</effect>
+<subnet>
+<value/>
+</subnet>
+<rate>
+<value>1.0</value>
+</rate>
+<timed>
+<value>true</value>
+</timed>
+<infiniteServer>
+<value>false</value>
+</infiniteServer>
+<priority>
+<value>1</value>
+</priority>
+</transition>
+<transition id="receiveAck">
+<graphics>
+<position x="150.0" y="327.50000000000006"/>
+</graphics>
+<name>
+<value>receiveAck</value>
+<graphics>
+<offset x="87.0" y="32.0"/>
+</graphics>
+</name>
+<orientation>
+<value>90</value>
+</orientation>
+<guard>
+<value/>
+</guard>
+<effect>
+<value/>
+</effect>
+<subnet>
+<value/>
+</subnet>
+<rate>
+<value>1.0</value>
+</rate>
+<timed>
+<value>true</value>
+</timed>
+<infiniteServer>
+<value>false</value>
+</infiniteServer>
+<priority>
+<value>1</value>
+</priority>
+</transition>
+<transition id="receiveMessage">
+<graphics>
+<position x="360.0" y="192.5"/>
+</graphics>
+<name>
+<value>receiveMessage</value>
+<graphics>
+<offset x="111.0" y="30.0"/>
+</graphics>
+</name>
+<orientation>
+<value>90</value>
+</orientation>
+<guard>
+<value/>
+</guard>
+<effect>
+<value/>
+</effect>
+<subnet>
+<value/>
+</subnet>
+<rate>
+<value>1.0</value>
+</rate>
+<timed>
+<value>true</value>
+</timed>
+<infiniteServer>
+<value>false</value>
+</infiniteServer>
+<priority>
+<value>1</value>
+</priority>
+</transition>
+<transition id="sendAck">
+<graphics>
+<position x="360.0" y="327.50000000000006"/>
+</graphics>
+<name>
+<value>sendAck</value>
+<graphics>
+<offset x="75.0" y="1.0"/>
+</graphics>
+</name>
+<orientation>
+<value>90</value>
+</orientation>
+<guard>
+<value/>
+</guard>
+<effect>
+<value/>
+</effect>
+<subnet>
+<value/>
+</subnet>
+<rate>
+<value>1.0</value>
+</rate>
+<timed>
+<value>true</value>
+</timed>
+<infiniteServer>
+<value>false</value>
+</infiniteServer>
+<priority>
+<value>1</value>
+</priority>
+</transition>
+<transition id="T1">
+<graphics>
+<position x="150.0" y="192.5"/>
+</graphics>
+<name>
+<value>sendMessage</value>
+<graphics>
+<offset x="103.0" y="-2.0"/>
+</graphics>
+</name>
+<orientation>
+<value>90</value>
+</orientation>
+<guard>
+<value/>
+</guard>
+<effect>
+<value/>
+</effect>
+<subnet>
+<value/>
+</subnet>
+<rate>
+<value>1.0</value>
+</rate>
+<timed>
+<value>true</value>
+</timed>
+<infiniteServer>
+<value>false</value>
+</infiniteServer>
+<priority>
+<value>1</value>
+</priority>
+</transition>
+<arc id="P1 to T1" source="P1" target="T1">
+<graphics/>
+<inscription>
+<value>Default,</value>
+<graphics/>
+</inscription>
+<tagged>
+<value>false</value>
+</tagged>
+<arcpath id="000" x="161" y="159" curvePoint="false"/>
+<arcpath id="001" x="161" y="199" curvePoint="false"/>
+<type value="normal"/>
+</arc>
+<arc id="P2 to receiveAck" source="P2" target="receiveAck">
+<graphics/>
+<inscription>
+<value>Default,</value>
+<graphics/>
+</inscription>
+<tagged>
+<value>false</value>
+</tagged>
+<arcpath id="000" x="156" y="279" curvePoint="false"/>
+<arcpath id="001" x="156" y="334" curvePoint="false"/>
+<type value="normal"/>
+</arc>
+<arc id="P3 to process1" source="P3" target="process1">
+<graphics/>
+<inscription>
+<value>Default,</value>
+<graphics/>
+</inscription>
+<tagged>
+<value>false</value>
+</tagged>
+<arcpath id="000" x="147" y="414" curvePoint="false"/>
+<arcpath id="001" x="124" y="412" curvePoint="true"/>
+<arcpath id="002" x="95" y="401" curvePoint="true"/>
+<arcpath id="003" x="75" y="358" curvePoint="true"/>
+<arcpath id="004" x="71" y="269" curvePoint="true"/>
+<type value="normal"/>
+</arc>
+<arc id="P4 to receiveMessage" source="P4" target="receiveMessage">
+<graphics/>
+<inscription>
+<value>Default,</value>
+<graphics/>
+</inscription>
+<tagged>
+<value>false</value>
+</tagged>
+<arcpath id="000" x="377" y="159" curvePoint="false"/>
+<arcpath id="001" x="376" y="200" curvePoint="false"/>
+<type value="normal"/>
+</arc>
+<arc id="P5 to sendAck" source="P5" target="sendAck">
+<graphics/>
+<inscription>
+<value>Default,</value>
+<graphics/>
+</inscription>
+<tagged>
+<value>false</value>
+</tagged>
+<arcpath id="000" x="371" y="294" curvePoint="false"/>
+<arcpath id="001" x="371" y="334" curvePoint="false"/>
+<type value="normal"/>
+</arc>
+<arc id="P6 to process2" source="P6" target="process2">
+<graphics/>
+<inscription>
+<value>Default,</value>
+<graphics/>
+</inscription>
+<tagged>
+<value>false</value>
+</tagged>
+<arcpath id="000" x="392" y="415" curvePoint="false"/>
+<arcpath id="001" x="433" y="411" curvePoint="true"/>
+<arcpath id="002" x="469" y="388" curvePoint="true"/>
+<arcpath id="003" x="478" y="340" curvePoint="true"/>
+<arcpath id="004" x="476" y="284" curvePoint="true"/>
+<type value="normal"/>
+</arc>
+<arc id="P7 to receiveMessage" source="P7" target="receiveMessage">
+<graphics/>
+<inscription>
+<value>Default,</value>
+<graphics/>
+</inscription>
+<tagged>
+<value>false</value>
+</tagged>
+<arcpath id="000" x="275" y="192" curvePoint="false"/>
+<arcpath id="001" x="305" y="170" curvePoint="true"/>
+<arcpath id="002" x="355" y="175" curvePoint="true"/>
+<arcpath id="003" x="366" y="199" curvePoint="true"/>
+<type value="normal"/>
+</arc>
+<arc id="P8 to receiveAck" source="P8" target="receiveAck">
+<graphics/>
+<inscription>
+<value>Default,</value>
+<graphics/>
+</inscription>
+<tagged>
+<value>false</value>
+</tagged>
+<arcpath id="000" x="255" y="329" curvePoint="false"/>
+<arcpath id="001" x="206" y="300" curvePoint="true"/>
+<arcpath id="002" x="166" y="335" curvePoint="true"/>
+<type value="normal"/>
+</arc>
+<arc id="process1 to P1" source="process1" target="P1">
+<graphics/>
+<inscription>
+<value>Default,</value>
+<graphics/>
+</inscription>
+<tagged>
+<value>false</value>
+</tagged>
+<arcpath id="000" x="71" y="259" curvePoint="false"/>
+<arcpath id="001" x="79" y="206" curvePoint="true"/>
+<arcpath id="002" x="104" y="163" curvePoint="true"/>
+<arcpath id="003" x="147" y="147" curvePoint="true"/>
+<type value="normal"/>
+</arc>
+<arc id="process2 to P4" source="process2" target="P4">
+<graphics/>
+<inscription>
+<value>Default,</value>
+<graphics/>
+</inscription>
+<tagged>
+<value>false</value>
+</tagged>
+<arcpath id="000" x="476" y="274" curvePoint="false"/>
+<arcpath id="001" x="477" y="211" curvePoint="true"/>
+<arcpath id="002" x="454" y="165" curvePoint="true"/>
+<arcpath id="003" x="392" y="146" curvePoint="true"/>
+<type value="normal"/>
+</arc>
+<arc id="receiveAck to P3" source="receiveAck" target="P3">
+<graphics/>
+<inscription>
+<value>Default,</value>
+<graphics/>
+</inscription>
+<tagged>
+<value>false</value>
+</tagged>
+<arcpath id="000" x="161" y="344" curvePoint="false"/>
+<arcpath id="001" x="161" y="400" curvePoint="false"/>
+<type value="normal"/>
+</arc>
+<arc id="receiveMessage to P5" source="receiveMessage" target="P5">
+<graphics/>
+<inscription>
+<value>Default,</value>
+<graphics/>
+</inscription>
+<tagged>
+<value>false</value>
+</tagged>
+<arcpath id="000" x="371" y="209" curvePoint="false"/>
+<arcpath id="001" x="371" y="265" curvePoint="false"/>
+<type value="normal"/>
+</arc>
+<arc id="sendAck to P6" source="sendAck" target="P6">
+<graphics/>
+<inscription>
+<value>Default,</value>
+<graphics/>
+</inscription>
+<tagged>
+<value>false</value>
+</tagged>
+<arcpath id="000" x="376" y="345" curvePoint="false"/>
+<arcpath id="001" x="377" y="400" curvePoint="false"/>
+<type value="normal"/>
+</arc>
+<arc id="sendAck to P8" source="sendAck" target="P8">
+<graphics/>
+<inscription>
+<value>Default,</value>
+<graphics/>
+</inscription>
+<tagged>
+<value>false</value>
+</tagged>
+<arcpath id="000" x="366" y="344" curvePoint="false"/>
+<arcpath id="001" x="323" y="378" curvePoint="true"/>
+<arcpath id="002" x="278" y="350" curvePoint="true"/>
+<type value="normal"/>
+</arc>
+<arc id="T1 to P2" source="T1" target="P2">
+<graphics/>
+<inscription>
+<value>Default,</value>
+<graphics/>
+</inscription>
+<tagged>
+<value>false</value>
+</tagged>
+<arcpath id="000" x="156" y="209" curvePoint="false"/>
+<arcpath id="001" x="156" y="250" curvePoint="false"/>
+<type value="normal"/>
+</arc>
+<arc id="T1 to P7" source="T1" target="P7">
+<graphics/>
+<inscription>
+<value>Default,</value>
+<graphics/>
+</inscription>
+<tagged>
+<value>false</value>
+</tagged>
+<arcpath id="000" x="166" y="210" curvePoint="false"/>
+<arcpath id="001" x="219" y="240" curvePoint="true"/>
+<arcpath id="002" x="256" y="215" curvePoint="true"/>
+<type value="normal"/>
+</arc>
+</net>
+</pnml>

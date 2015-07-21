@@ -1,0 +1,264 @@
+FMID Specification 
+
+A MID specification is in the Excel format. Its file has an extension name XMID or XLS (read only).
+Sheet 1 is for model, sheet 2 for MIM, and sheet 3 for helper code.
+The first column contains keywords only. If it is empty or starts with //, the entire row is ignored as a comment. 
+If the second column of a row is empty, the entire row is ignored as well. 
+
+-----------------------------------------------------------------------------------------
+Table of Contents
+
+Part I: Model
+Part II: Model-Implementation Mapping (MIM)
+Part III: Helper Code
+
+Appendix A: Tips
+
+-----------------------------------------------------------------------------------------
+Part I: Model 
+
+Notation: ()* means 0 to many times; ()+: one to many times; [] 0-1 time
+
+<model> ::=
+     <model type>
+     (<model row>)*
+	(<initial state>)+ 	
+	(<goal state>)*			
+	<constants>
+	<unit tests> 
+	<sequences file>
+	<sink events>
+
+ 	<model type>::== MODELTYPE (<Function net> | <State machine>) | <contract> | <threat net> | <threat tree>) 
+
+	<model row> ::= MODEL <row spec>
+
+	<row spec> ::= <prt_transition> | <fsm_transition> | <contract> | <threat_net_transition> | <threat tree node>
+
+	<prt_transition> ::= <event> <precondition> <postcondition> <when> <effect> <guard>
+	<fsm_transition> ::= <event> <start state> <end state> <guard> <effect>
+	<contract> ::= <module> <precondition> <postcondition> <when> <effect> 
+	<threat_net_transition> ::= <event> <precondition> <postcondition> <when> <effect> <guard>
+	<threat tree node> :: <event> <child events> <threat_tree_relation>
+
+	A threat net is the same as a prt net, except that transitions named after "attack" are called attack transitions.
+	For a threat tree model, init/goal states,  unit tests, and sequence file are not used. 
+
+	A precondition, postcondition, when, or effect is a list of predicates. 
+	A guard is a string, which is not evaluated. It is used to help create dirty tests with branch coverage. 
+	Rule 1: IF none of the transitions of an event is firable at a state
+		THEN a dirty test is created for the event at this state
+	Rule 2: IF a dirty test is wanted even though there are firings for an event
+		THEN associate a guard condition with the transitions of the event 
+
+	<predicate> ::= [not] <name> [(<argument_list>)]
+	<argument_list> ::= [<argument> (, <argument>)*]
+	<argument> ::+ <variable> | <symbol> | <string> | <identifier>
+	<threat_tree_relation> ::= <OR> | <AND>			
+ 
+	  
+<initial state> ::= INIT <predicate_list>	// no negation, no variable
+
+<goal state> ::= GOAL <predicate_list>		// no negation, no variable
+	
+The predicate list of an init/goal state can be spread in multiple columns/cells of the same row. 
+	
+Notes: Naming convention: 
+	(1) an identifier (name) starts with a letter. It may contain dot("."). 
+		Identifiers are typically used for transitions, predicates(places), events, and start/end states.
+	(2) a variable (parameter) starts with a question mark(?) or a lower case letter
+	(3) a constant/symbol (parameter) is a string or starts with a digit or upper case letter 
+
+Notes: Parameters for function nets, contracts, and threat nets 
+	Rule 1: If parameters are not specified, then the parameters are all the variables involved in the precondition
+	Rule 2: If () is specified, then there are no parameters no matter how many variables are involved in the precondition
+	Rule 3: If (?x, ?y) is specified, there are two parameters, although more than two can be involved in the precondition
+
+Notes: RESET
+	reset(p) can be used in postcondition, but not in precondition, effect, or inscription, initial/goal state. 
+	When reset(p) is called, it will remove all tokens from place p and make p(x) false for any x.
+	It is also possible to add tokens to place p after reset in the same postcondition. 
+		
+Notes: Functions in guard condition/when
+		x=y or equals(x, y)
+		x!=y or x<>y, or not equals(x, y)
+		x>y or gt)x,y): greater than (gt), 
+		x>=y or gte(x, y)
+		x<y or lt(x, y) 
+		x<=y or lte(x,y)
+		z=x+y or add(x, y, z)
+		z=x-y or subtract(x, y, z)
+		z=x*y or multiply(x, y, z) 
+		z=x/y or divide(x, y, z)
+		z=x%y or modulus(x, y, z)
+		isOdd(x)
+		isEven(x)
+		belongsTo(x, y1, y2,...,yn): x is one of y1, ..., yn
+		bound(x): variable x is bound
+		assert(p): p has at least one token
+		tokenCount(p, x): the number of tokens in p is x (variable or integer constant)
+		
+Warning: add and subtract may lead to infinite states
+
+<constants> :: = CONSTANTS (<KEY=VALUE>)+
+<sinks> :: = SINKS (<event>)+
+
+<unit tests> ::= UNIT <predicate_list>		// no variables, negation is allowed, representing a dirty test
+	A (model-level) unit test is a call to a module or event with actual parameters. 
+	The unit test data are converted into the initial state. 
+	Whether or not unit tests are used depends on the transitions. 
+	However, dirty unit tests will have higher priority to be selected for dirty test sequences. 
+	
+	A unit test predicate will be a precondition/postcondition for the transitions of the event. 
+	For each transition t with unit test data, a precondition/postcondition tTest() is added. 
+
+// a sequences file specifies sequences of transitions with variable bindings for test generation purposes
+// the coverage is called "given sequences"
+// The given sequences could come from manual/random test design or 
+// other results of using other verification tools (e.g., counterexamples of model checking) 
+
+<sequence file> ::= sequences <sequence file name>
+<sequence file name> ::= <identifier> | <string>
+
+<sequence> ::= sequence [(INIT <init state index>)]
+				<event name in transition> <transition index> 
+				[(<VAR>/<VALUE>)+]
+Notes: 
+	(1) indices of transitions and initial states start from 1. 
+	(2) When event name is given, the first transition for the event will be used. 
+
+-----------------------------------------------------------------------------------------
+Part II: Model-Implementation Mapping (MIM)
+
+<MIM>::= 
+	(CLASS|URL|FUNCTION)	<name>)	
+	(OBJECT 	<model-level-object> <implementation-level-object>)*
+	(METHOD 	<predicate> <operation code>)*	
+	(ACCESSOR 	<predicate> <accessor code>)*
+	(MUTATOR	<predicate> <mutator code>)*
+	HIDDEN		<predicate/event name list>
+	OPTION		<predicate name list>
+	PARAMETER	<predicate_list>		// no negation
+
+Notes: 
+	(0) CLASS for a cluster of classes, URL for a web application, FUNCTION for a non-class-cluster OO program or C program
+	(1) Objects
+		A model-level object is mapped to an implementation-level object, typically a named constant or expression.  	  
+	(2) Methods: 
+		A predicate refers to a module/event and its formal parameters.
+		The operation code is the code to execute the corresponding part of the system under test
+		
+		TIP: To be safe, variables in methods, accessors and mutators should start with ? 
+			because all occurrences of ?x will be replaced with the value bound to ?x
+			If the operation code for a module/event is not specified, it is the same in the implementation. 
+		
+	(3) Accessor code is used to call the implementation for evaluating predicates in 
+		postconditions/markings in contracts and PrT nets, effects in contracts and PrT nets, and 
+		postconditions in state machines. If the accessor code is not specified for a predicate, 
+		it is the same in the implementation.  
+		
+		accessor code for a postcondition predicate should be a boolean expression. It is converted into assertions automatically. 
+		accessor code for an effect/action predicate does not have to be a boolean expression. Assertions could be used in the user-defined code, though.
+		object reference will NEVER be attached to the accessor code for effect/action predicates.
+
+	(4) Mutator code is used to call the implementation to achieve the given initial state, and
+		set up the given system options/preferences. If the code is not specified for a predicate, 
+		it is the same in the implementation.  
+
+	(5) Hidden predicate/events 
+		If a predicate/event has no counterpart in the implementation(e.g., for control purposes in the model),
+		then it can be declared as hidden, so that it will not be used to generate test code.
+		 
+	(6) Options
+		An option predicate in the precondition of a module/event refers to an option/preference
+		that must be selected or checked in order to call the module or event. 
+		Technically, an option place, when used in postcondition, is excluded from generation of oracle code.
+		By default, an option predicate is hidden. 
+		However, when used in precondition, it is used to generate set up code.   
+
+	(7) Parameters
+		Predicate name must be constructor (new) or an event. It does not contain variables. 
+		The values used in a parameter predicate will be used for all calls to the event. When an argument is neither identifier nor symbol, 
+		it can be enclosed by the double quotation marks, e.g., new("new CarSimulator()", "new CruiseDisplay()").
+		If string arguments are needed, use appropriate escape characters \" in strings. 
+	
+	(8) When multiple mappings for the same event (in method) or state predicate (accessor/mutator) are specified, 
+		the operation/accessor/mutator code will be concatenated with "\n".
+	
+	(9) For Selenium IDE, each mapping for methods, accessors, and mutators is specified by a four tuple: 
+		<name and arguments> <selenium command> <target> <value>
+
+	(10) For test generation from a threat tree model, only system Id, hidden, and methods are used. 
+
+-----------------------------------------------------------------------------------------
+Part III: Helper Code
+
+<Helper Code> ::=
+	PACKAGE/NAMESPACE		<header code>
+	IMPORT/USING/INCLUDE <header code>
+	BEGIN/ALPHA 	"<alpha code>"			// executed at the beginning of the entire test suite
+	END/OMEGA	 	"<omega code>" 			// executed at the end of the entire test suite 
+	SETUP 			"<setup code>"			// executed at the beginning of each test case
+	TEARDOWN 		"<teardown code>" 		// executed at the end of each test case
+	CODE 			"<local code>"			// code to be included in the test code
+
+Notes:
+	(1) If the setup code is not specified, it will be generated automatically according the initial state. 
+	(2) Local code could be any code (constants, variables and methods) in the target language. 
+
+__________________________________________________________________________________________________________
+
+Appendix A: Tips
+__________________________________________________________________________________________________________
+
+(1) Model-level variables may not have counterparts in implementation. This provides flexibility for modeling.
+	For example, the mapping of the model-level event selectPage(x) may not contain variable x. selectPage should be listed as hidden. 
+	
+(2) For RESET in postcondition, an accessor can be associated to verify effects. In this case, select postcondition as the oracle. 
+	In a shopping cart application, for example, checkOut will clear the cart. An accessor can be defined to check if the cart is empty.
+
+(3) Test static methods in OO programs
+	Specify Setup code, use class name in methods/accessors/mutators(don't select to attach object references)
+
+(4) Repeat a particular input call
+	(a) Attach a loop to the tree node of the call, such as "for (int i=0; i<5; i++)"
+	(b) Attach a loop to the child node, such as  "for (int i=0; i<4; i++) object.call();"		 
+	In both cases, more statements can be added before the loop so that the loop can be a complex one. 
+	Caution: the input event call should not change the abstract state, otherwise be careful about test oracles. 
+
+	if repetition is always needed for a model-level event, the loop can be specified in the mapping code. 
+	
+(5) Objects in models can be mapped to, or simply are, named constants in programs 
+ 	For example, (A, "StructureCoverageFactory.AllTransitions")
+    Another example: TC used in a model could be a named constant in the helper code or in the system under test. In this case, no need to define object mapping.  
+
+(6) Predicates in Accessors/Mutators may have constants. 
+ 	For example, (throttle(0), "getThrottle()==0")
+
+(7) Helper code can be defined to facilitate the expressions in methods/accessors/mutators
+ 	For example, isD0 in accessor (isD0, "isD0(cruisecontroller.getSpeedControl())")
+ 	is defined by the following local code
+ 			private void isD0(SpeedControl speedControl){
+				assert speedControl.getCruiseEnabled()==0 && speedControl.getSetSpeed()<=0; 
+			}
+			
+(8) Precedences of test parameters 
+	User provided parameters (table view) > test parameters in MID file > auto-generated parameters
+	
+(9) Multiple initial states
+	When the setUp is provided by the user, it will be used for those tests generated from the first initial state. 
+	The setUp code for tests from other initial states need to be provided as helper code. It could simply call the provided setUp. 
+	For example: 
+	private void setUp2() throws Exception {
+		setUp();
+	}
+	Avoid using multiple initial states when JUnit/NUnit is used.
+	
+(10) The number of paths in the tree interface may be greater than the number of tests.
+	When the event in a leave node (test) is hidden (i.e., not for code generation), it is duplicate (invalid) unless it is the parent's first child. 
+	This typically happens when transitions are used for control purposes without counterpart in the implementation. 
+	
+(11) For attack tree models, the test generation strategy is fixed. Coverage criteria do not apply.  	
+
+	
+ 	

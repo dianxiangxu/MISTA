@@ -1,0 +1,14 @@
+*** Settings ***
+Resource  LightSwitchNetResource.txt
+Test Setup  Remove File  switchState.txt
+
+*** Testcases ***
+test1	
+	flip  Switch  1
+	light  OFF
+	flip  Switch  1
+	light  ON
+	flip  Switch  2
+	light  OFF
+	flip  Switch  1
+	light  ON

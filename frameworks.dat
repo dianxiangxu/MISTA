@@ -1,0 +1,45 @@
+// This file contains the test frameworks that will be used. Don't modify the following information unless you know exactly what you are doing. 
+//
+// IMPORTANT: 
+// If you try to add test frameworks, make sure the syntax (particularly for the strings in HTML code) is correct, otherwise fatal runtime errors may occur. 
+// For exceptions caused by incorrect specification, ISTA will catch and report them. ISTA can continue to run using the built-in list of test frameworks.  
+// HOWEVER, if ISTA failed to run due to the runtime errors caused by the incorrect specification, you need to fix the specification problem.
+// If you don't want to play with this file and the built-in lists of test frameworks already meet your needs, then you can simply delete this file.
+
+// Keyword: TEST FRAMEWORK
+// Four components for the specification of each framework: language name, test framework name, import package(or html header), inheritance syntax (or html initialization code) 
+
+// Default (always available): no test framework for Java/C#, Selenium for HTML 
+
+// test frameworks for Java
+TEST FRAMEWORK "Java", "JUnit4", "import org.junit.*;import static org.junit.Assert.*;", ""
+TEST FRAMEWORK "Java", "Robotium", "import android.test.ActivityInstrumentationTestCase2;", "extends ActivityInstrumentationTestCase2<EditorActivity>"
+TEST FRAMEWORK "Java", "JUnit3", "import junit.framework.*;", "extends TestCase"
+TEST FRAMEWORK "Java", "WindowTester","import com.windowtester.runtime.swt.UITestCaseSWT;", "extends UITestCaseSWT"
+TEST FRAMEWORK "Java", "JfcUnit","import junit.extensions.jfcunit.*;", "extends JFCTestCase"
+
+//test frameworks for C#
+TEST FRAMEWORK "C#", "NUnit", "using NUnit.Framework;", ""
+
+/*
+// test frameworks for HTML, the following specification for Selenium has been used as the default. 
+// In the initialization code, 
+// VAR_URL will be replaced with the URL of web application under test
+// VAR_TESTID will be replaced with test number
+TEST FRAMEWORK "HTML", "Selenium IDE", 
+
+//html header
+"<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">
+<html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\" lang=\"en\">,
+
+// initialization code used in the beginning of each test sequence
+"<link rel=\"selenium.base\" href=\VAR_URL\" />
+<title>test VAR_TESTID </title>
+<body>
+<table cellpadding=\"1\" cellspacing=\"1\" border=\"1\">
+<thead>
+<tr><td rowspan=\"1\" colspan=\"3\">test VAR_TESTID</td></tr>
+</thead><tbody>"
+
+*/

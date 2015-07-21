@@ -1,0 +1,1789 @@
+options {
+  CHOICE_AMBIGUITY_CHECK = 2;
+  OTHER_AMBIGUITY_CHECK = 1;
+  STATIC = false;
+  DEBUG_PARSER = false;
+  DEBUG_LOOKAHEAD = false;
+  DEBUG_TOKEN_MANAGER = false;
+  ERROR_REPORTING = true;
+  JAVA_UNICODE_ESCAPE = false;
+  UNICODE_INPUT = false;
+  IGNORE_CASE = true;
+  USER_TOKEN_MANAGER = false;
+  USER_CHAR_STREAM = false;
+  BUILD_PARSER = true;
+  BUILD_TOKEN_MANAGER = true;
+  SANITY_CHECK = true;
+  FORCE_LA_CHECK = false;
+}
+
+PARSER_BEGIN(MIDParser)
+package parser;
+
+import java.util.*;
+import java.io.*;
+
+import locales.LocaleBundle;
+import mid.*;
+
+// A variable name can be 
+// 			either an identifier (IDENTIFIER) starting with a lower case letter 
+// 			or a special name (SPECIALVAR) that starts with ? 
+// use MID.isVariable(name) to check whether a name is legal
+//
+// Transition parameters must be variables
+// Initial state, goal state, unit tests, and object mapping should not contain variables   
+
+// for strings of precondition/postcondition/inscription/effect/unit tests
+// where predicate arguments could be symbols, identifiers, special variables and strings
+// constraints of unit tests need to be checked after parsing
+
+public class MIDParser {
+
+	// constructors are generated
+	
+	public static ArrayList<Predicate> parseConditionString(String inString) throws ParseException {
+		if (inString.equals(""))
+			return new ArrayList<Predicate>();
+		Reader reader = null;
+		ArrayList<Predicate> condition = null;
+		try {
+			reader = new StringReader(inString) ;
+			MIDParser parser = new MIDParser(reader) ;
+			condition = parser.parseConditionStream(); 
+	    } 
+	    catch (ParseException e) {
+	    	throw new ParseException(inString+": "+exceptionMessage(e));
+	    }
+		catch (TokenMgrError e){
+				throw new ParseException(inString+": "+exceptionMessage(e));				
+		}
+		finally {
+			try {reader.close();	}
+			catch (IOException ioe) {}
+		}
+		return condition; 
+	}	 
+
+	public static String parseExpression(String inString) throws ParseException {
+		Reader reader = null;
+		try {
+			reader = new StringReader(inString) ;
+			ExpressionParser parser = new ExpressionParser(reader) ;
+			return parser.ArithmeticExpression(); 
+	    } 
+	    catch (ParseException e) {
+	    	throw e;
+	    }
+		catch (TokenMgrError e){
+	    	throw e;
+		}
+		finally {
+			try {reader.close();	}
+			catch (IOException ioe) {}
+		}
+	}	
+
+	public static ArrayList<String> collectExpressionVariables(String inString) throws ParseException {
+		Reader reader = null;
+		try {
+			reader = new StringReader(inString) ;
+			ExpressionParser parser = new ExpressionParser(reader) ;
+			return parser.collectExpressionVariables(); 
+	    } 
+	    catch (ParseException e) {
+	    	throw e;
+	    }
+		catch (TokenMgrError e){
+	    	throw e;
+		}
+		finally {
+			try {reader.close();	}
+			catch (IOException ioe) {}
+		}
+	}	
+
+	public static String evaluateExpression(String inString, Hashtable <String, String> bindings) throws ParseException {
+		Reader reader = null;
+		try {
+			reader = new StringReader(inString) ;
+			MIDParser parser = new MIDParser(reader) ;
+			return parser.evaluateExpressionValue(bindings); 
+	    } 
+	    catch (ParseException e) {
+	    	throw e;
+	    }
+		catch (TokenMgrError e){
+	    	throw e;
+		}
+		finally {
+			try {reader.close();	}
+			catch (IOException ioe) {}
+		}
+	}	
+
+	// for strings of transition signatures where arguments are required to be variables
+	public static Predicate parseTransitionSignatureString(String inString) throws ParseException {
+		Reader reader = null;
+		Predicate predicate = null;
+		try {
+			reader = new StringReader(inString) ;
+			MIDParser parser = new MIDParser(reader) ;
+			predicate = parser.parseTransitionSignatureStream(); 
+	    } 
+	    catch (ParseException e) {
+	    	throw new ParseException(inString+" : "+LocaleBundle.bundleString("Incorrect transition signature"));
+	    }
+		catch (TokenMgrError e){
+			throw new ParseException(inString+" : "+LocaleBundle.bundleString("Incorrect transition signature"));				
+		}
+		finally {
+			try {reader.close();	}
+			catch (IOException ioe) {}
+		}
+		return predicate;
+	}	
+
+	public static void parseWhenCondition(Transition transition, String whenConditionString) throws ParseException{
+		ArrayList<Predicate> whenPredicates = parseConditionString(whenConditionString);
+		for (Predicate predicate: whenPredicates)
+			if (!Functions.isFunction(predicate))
+				throw new ParseException(predicate+": "+LocaleBundle.bundleString("Incorrect function"));
+			else if (!Functions.hasCorrectArguments(predicate))
+				throw new ParseException(predicate+": "+LocaleBundle.bundleString("Incorrect argument"));				
+		transition.setWhenCondition(whenPredicates);		
+	}
+	
+	private static boolean containVariable(ArrayList<String> arguments, String variable){
+		for (String argument: arguments)
+			if (argument.equals(variable))
+				return true;
+		return false;
+	}
+	
+	public static void checkTransitionArguments(String signatureString, ArrayList<String> transitionArguments, 
+				ArrayList<Predicate> precondition, ArrayList<Predicate> whencondition) throws ParseException {
+		if (transitionArguments!=null){
+			ArrayList<String> variableList = new ArrayList<String>();
+			for (Predicate predicate: precondition){
+				for (String argument: predicate.getArguments())
+					if (MID.isVariable(argument) && !containVariable(variableList, argument))
+						variableList.add(argument);
+			}
+			if (whencondition!=null){
+				for (Predicate predicate: whencondition){
+					if (Functions.isArithmeticFunction(predicate)) {
+						ArrayList<String> arguments = predicate.getArguments();
+						variableList.add(arguments.get(arguments.size()-1));
+					} else
+					if (Functions.isEqualFunction(predicate)) {
+						String arg1 = predicate.getArguments().get(0);
+						if (MID.isVariable(arg1) && !containVariable(variableList, arg1))
+							variableList.add(arg1);					
+					}				
+				} 
+			}
+			for (String transitionArgument: transitionArguments) {
+				if (MID.isVariable(transitionArgument) && !containVariable(variableList, transitionArgument)){
+					throw new ParseException(signatureString+": "+LocaleBundle.bundleString("Variable")
+						+ " " + transitionArgument +" "
+						+ LocaleBundle.bundleString("is undefined")
+						+ LocaleBundle.bundleString("It should appear in precondition"));
+				}
+			}
+		}
+	}
+
+	public static void checkWhenConditionVariables(ArrayList<Predicate> precondition, ArrayList<Predicate> whencondition) throws ParseException {
+		ArrayList<String> allVariables = new ArrayList<String>();
+		for (Predicate predicate: precondition){
+				for (String argument: predicate.getArguments())
+					if (MID.isVariable(argument) && !containVariable(allVariables, argument))
+						allVariables.add(argument);
+		}
+		if (whencondition!=null){
+			for (Predicate whenPredicate: whencondition){
+				if (Functions.isArithmeticFunction(whenPredicate)) {
+					ArrayList<String> arguments = whenPredicate.getArguments();
+					for (int i=0; i<arguments.size()-1; i++)
+						if (MID.isVariable(arguments.get(i)) && !containVariable(allVariables, arguments.get(i)))
+								throw new ParseException(LocaleBundle.bundleString("Variable")
+										+ " " + arguments.get(i) +" in "+ whenPredicate+" "
+										+ LocaleBundle.bundleString("is undefined")
+										+ LocaleBundle.bundleString("It should appear in precondition"));
+					allVariables.add(arguments.get(arguments.size()-1));
+				} else 
+				if (Functions.isEqualFunction(whenPredicate)){
+					String arg1 = whenPredicate.getArguments().get(0);
+					if (MID.isVariable(arg1) && !containVariable(allVariables, arg1))
+						allVariables.add(arg1);
+/*
+System.out.println("Variables: ");						
+for (String var: allVariables)
+System.out.println(var);						
+*/
+					String arg2 = whenPredicate.getArguments().get(1);
+					for (String var: collectExpressionVariables(arg2))
+						if (!containVariable(allVariables, var))
+							throw new ParseException(LocaleBundle.bundleString("Variable")
+										+ " " + var +" in " + whenPredicate+" "
+										+ LocaleBundle.bundleString("is undefined")
+										+ LocaleBundle.bundleString("It should appear in precondition"));
+				} else
+				if (Functions.isComparisonFunction(whenPredicate)){
+					String arg1 = whenPredicate.getArguments().get(0);
+					if (MID.isVariable(arg1) && !containVariable(allVariables, arg1))
+						throw new ParseException(LocaleBundle.bundleString("Variable")
+										+ " " + arg1 +" in " + whenPredicate+" "
+										+ LocaleBundle.bundleString("is undefined")
+										+ LocaleBundle.bundleString("It should appear in precondition"));
+					String arg2 = whenPredicate.getArguments().get(1);
+					for (String var: collectExpressionVariables(arg2))
+						if (!containVariable(allVariables, var))
+							throw new ParseException(LocaleBundle.bundleString("Variable")
+										+ " " + var +" in " + whenPredicate+" "
+										+ LocaleBundle.bundleString("is undefined")
+										+ LocaleBundle.bundleString("It should appear in precondition"));
+				}
+			}
+		}
+		
+	}
+		
+	public static void checkPostconditionVariables(Transition transition) throws ParseException {
+		ArrayList<String> allVariables = new ArrayList<String>();
+		// collect variables from precondition
+		if (transition.getAllVariables()!=null){
+			for (String variable: transition.getAllVariables())
+				allVariables.add(variable);
+		}
+		// collect variables from when condition due to calculations
+		if (transition.getWhenCondition()!=null){
+			for (Predicate whenPredicate: transition.getWhenCondition()){
+				if (Functions.isArithmeticFunction(whenPredicate)) {
+					ArrayList<String> arguments = whenPredicate.getArguments();
+					allVariables.add(arguments.get(arguments.size()-1));
+				} else
+				if (Functions.isEqualFunction(whenPredicate)) {
+					String arg1 = whenPredicate.getArguments().get(0);
+					if (MID.isVariable(arg1) && !containVariable(allVariables, arg1))
+						allVariables.add(arg1);					
+				}
+			}
+		}
+		// each postcondition variable must have occured in precondition or when condition
+		if (transition.getPostcondition()!=null){
+			for (Predicate postPredicate: transition.getPostcondition()){
+				if (!postPredicate.getName().equalsIgnoreCase(MID.RESET)){
+					for (String argument: postPredicate.getArguments())
+						if (MID.isVariable(argument) && !containVariable(allVariables, argument)) 
+							throw new ParseException(postPredicate+": "+ argument +" "+LocaleBundle.bundleString("is undefined"+"\n")
+							+ LocaleBundle.bundleString("VARIABLES_IN_POSTCONDITIONS_SHOULD_APPEAR_IN_PRECONDIITONS"));
+				}
+			}
+		}
+	}
+	
+	// For  PrT net strings 
+	public static Transition parseNetTransition(String signatureString, 
+			String precondString, String postcondString, 
+			String inscriptionString, String effectString, String guard) throws ParseException {
+		return parseNetTransition(false, signatureString, precondString, postcondString, inscriptionString, effectString, guard);
+	}
+	
+	public static Transition parseNetTransition(boolean isContractsSpec, String signatureString, 
+			String precondString, String postcondString, String inscriptionString, 
+			String effectString, String guard) throws ParseException {
+		Predicate transitionSignature = parseTransitionSignatureString(signatureString);
+		Transition transition = new Transition(transitionSignature.getName());  
+		transition.setArguments(transitionSignature.getArguments());
+//System.out.println("Parse transition");		
+//System.out.println(signatureString);		
+//System.out.println(precondString);		
+		
+		ArrayList<Predicate> precondition = parseConditionString(precondString);
+		transition.setPrecondition(precondition);
+//System.out.println(postcondString);		
+		
+		ArrayList<Predicate> postcondition = parseConditionString(postcondString);
+		transition.setPostcondition(postcondition);
+//System.out.println(inscriptionString);		
+		
+		if (inscriptionString!=null && !inscriptionString.equals("")) {
+			parseWhenCondition(transition, inscriptionString);
+		}
+//System.out.println(guard);		
+//System.out.println(effectString);		
+						
+		ArrayList<Predicate> effect = parseConditionString(effectString); 
+		transition.setEffect(effect);
+		
+		if (guard!=null)
+			transition.setGuard(guard);
+		
+		checkTransitionArguments(signatureString, transitionSignature.getArguments(), precondition, transition.getWhenCondition());
+		checkWhenConditionVariables(precondition, transition.getWhenCondition());
+
+		if (isContractsSpec)
+			transition.transformFromContract();
+
+		if (transition.preconditionContainsFunction())
+				throw new ParseException(LocaleBundle.bundleString("precondition contains function"));
+		if (transition.postconditionContainsFunction())
+				throw new ParseException(LocaleBundle.bundleString("postcondition contains function"));							
+
+		transition.collectAllVariables();
+		checkPostconditionVariables(transition);
+			
+		return transition; 
+	} 
+
+	// for contract strings
+	public static Transition parseContractTransition(String signatureString, 
+			String precondString, String postcondString, 
+			String inscription, String effectString) throws ParseException {
+		Transition transition = parseNetTransition(true, signatureString, precondString, postcondString, inscription, effectString, "");  
+		return transition;
+	} 
+
+	// for transitions of state machines 
+	public static Transition parseStateMachineTransition(String start, String end, String event,
+			 String precondition, String postconditionString) throws ParseException {
+		if (!isIdentifier(start))
+        	throw new ParseException(start+": "+LocaleBundle.bundleString("should start with a letter"));
+		if (!isIdentifier(end))
+        	throw new ParseException(end+": "+LocaleBundle.bundleString("should start with a letter"));
+		if (!isIdentifier(event))
+        	throw new ParseException(event+": "+LocaleBundle.bundleString("should start with a letter"));
+		ArrayList<Predicate> postcondition = parseConditionString(postconditionString); 
+		return convertStateMachineTransitionToNetTransition(start, end, event, precondition, postcondition);
+	}
+
+	// for strings of initial and goal markings  
+	public static Marking parseMarkingString(String inString) throws ParseException {
+		Reader reader = null;
+		Marking marking = null;
+		try {
+			reader = new StringReader(inString) ;
+			MIDParser parser = new MIDParser(reader) ;
+			marking = parser.parseMarkingStream(); 
+	    } 
+	    catch (ParseException e) {
+	    	throw new ParseException(LocaleBundle.bundleString("incorrect marking")+"\n"+exceptionMessage(e));
+	    }
+		catch (TokenMgrError e){
+	    	throw new ParseException(LocaleBundle.bundleString("incorrect marking")+"\n"+exceptionMessage(e));
+		}
+		finally {
+			try {reader.close();	}
+			catch (IOException ioe) {}
+		}
+		return marking;
+	}	
+
+	// for strings of goal markings  
+	public static GoalProperty parseGoalPropertyString(String inString) throws ParseException {
+		Reader reader = null;
+		GoalProperty propertyTransition = null;
+		try {
+			reader = new StringReader(inString) ;
+			MIDParser parser = new MIDParser(reader) ;
+			propertyTransition = parser.parseGoalPropertyStream(inString); 
+	    } 
+	    catch (ParseException e) {
+	    	throw new ParseException(LocaleBundle.bundleString("incorrect marking")+"\n"+exceptionMessage(e));
+	    }
+		catch (TokenMgrError e){
+	    	throw new ParseException(LocaleBundle.bundleString("incorrect marking")+"\n"+exceptionMessage(e));
+		}
+		finally {
+			try {reader.close();	}
+			catch (IOException ioe) {}
+		}
+		return propertyTransition;
+	}	
+
+	// for strings of assertion propertys: thenClause <- ifClause   
+	public static AssertionProperty parseAssertionPropertyString(String inString) throws ParseException {
+		Reader reader = null;
+		AssertionProperty assertionProperty = null;
+		try {
+			reader = new StringReader(inString) ;
+			MIDParser parser = new MIDParser(reader) ;
+			assertionProperty = parser.parseAssertionPropertyStream(inString); 
+	    } 
+	    catch (ParseException e) {
+	    	throw new ParseException(LocaleBundle.bundleString("incorrect assertion")+"\n"+exceptionMessage(e));
+	    }
+		catch (TokenMgrError e){
+	    	throw new ParseException(LocaleBundle.bundleString("incorrect assertion")+"\n"+exceptionMessage(e));
+		}
+		finally {
+			try {reader.close();	}
+			catch (IOException ioe) {}
+		}
+		return assertionProperty;
+	}	
+
+
+	// for tokens in the initial marking of visual net  
+	public static ArrayList<Tuple> parseTokenString(String inString) throws ParseException {
+		Reader reader = null;
+		ArrayList<Tuple> tokenList = null;
+		try {
+			reader = new StringReader(inString) ;
+			MIDParser parser = new MIDParser(reader) ;
+			tokenList = parser.parseTokenStream(); 
+	    } 
+	    catch (ParseException e) {
+	    	throw new ParseException(LocaleBundle.bundleString("incorrect token in place"));
+	    }
+		catch (TokenMgrError e){
+	    	throw new ParseException(LocaleBundle.bundleString("incorrect token in place"));
+		}
+		finally {
+			try {reader.close();	}
+			catch (IOException ioe) {}
+		}
+		return tokenList;
+	}	
+
+
+	// for tokens from data files (initial states) specified in a visual net  
+	public static Tuple parseTokenFromDataFile(String inString) throws ParseException {
+		Reader reader = null;
+		Tuple token = null;
+		try {
+			reader = new StringReader(inString) ;
+			MIDParser parser = new MIDParser(reader) ;
+			token = parser.parseTokenFromDataFile(); 
+	    } 
+	    catch (ParseException e) {
+	    	throw new ParseException(LocaleBundle.bundleString("incorrect token in place"));
+	    }
+		catch (TokenMgrError e){
+	    	throw new ParseException(LocaleBundle.bundleString("incorrect token in place"));
+		}
+		finally {
+			try {reader.close();	}
+			catch (IOException ioe) {}
+		}
+		return token;
+	}	
+
+	// for named integers  
+	public static void parseNamedIntegersString(String inString) throws ParseException {
+		Reader reader = null;
+		try {
+			reader = new StringReader(inString) ;
+			MIDParser parser = new MIDParser(reader) ;
+			parser.parseNamedIntegersStream(); 
+	    } 
+	    catch (ParseException e) {
+	    	throw e;
+	    }
+		catch (TokenMgrError e){
+	    	throw e;
+		}
+		finally {
+			try {reader.close();	}
+			catch (IOException ioe) {}
+		}
+	}	
+
+	public static void parseEnumerationString(String inString) throws ParseException {
+		Reader reader = null;
+		try {
+			reader = new StringReader(inString) ;
+			MIDParser parser = new MIDParser(reader) ;
+			parser.parseEnumerationStream(); 
+	    } 
+	    catch (ParseException e) {
+	    	throw e;
+	    }
+		catch (TokenMgrError e){
+	    	throw e;
+		}
+		finally {
+			try {reader.close();	}
+			catch (IOException ioe) {}
+		}
+	}	
+
+	// for arc labels in a visual net  
+	public static ArrayList<ArrayList<String>> parseArcLabelString(String inString) throws ParseException {
+		Reader reader = null;
+		ArrayList<ArrayList<String>> arcLabelList = new ArrayList<ArrayList<String>>();
+		try {
+			reader = new StringReader(inString) ;
+			MIDParser parser = new MIDParser(reader) ;
+			arcLabelList = parser.parseArcLabelList(); 
+	    } 
+	    catch (ParseException e) {
+	    	throw new ParseException(LocaleBundle.bundleString("incorrect arc label"));
+	    }
+		catch (TokenMgrError e){
+	    	throw new ParseException(LocaleBundle.bundleString("incorrect arc label"));
+		}
+		finally {
+			try {reader.close();	}
+			catch (IOException ioe) {}
+		}
+		return arcLabelList;
+	}	
+
+	// for object string: an object is a symbol, string or identifier
+	public static boolean parseObjectString(String inString){
+		Reader reader = null;
+		try {
+			reader = new StringReader(inString) ;
+			MIDParser parser = new MIDParser(reader) ;
+			parser.parseObjectStream(); 
+	    } 
+	    catch (ParseException e) {
+	    	return false;
+	    }
+		catch (TokenMgrError e){
+			return false;			
+		}
+		finally {
+			try {reader.close();	}
+			catch (IOException ioe) {}
+		}
+		return true;
+	}	 
+
+	// for predicates in the mappings of methods, accessors and mutators 
+	public static Predicate parseMappingPredicateString(String inString) throws ParseException {
+		Reader reader = null;
+		Predicate predicate = null;
+		try {
+			reader = new StringReader(inString) ;
+			MIDParser parser = new MIDParser(reader) ;
+			predicate = parser.parseMappingPredicateStream(); 
+	    } 
+	    catch (ParseException e) {
+	    	throw new ParseException(exceptionMessage(e));
+	    }
+		catch (TokenMgrError e){
+			throw new ParseException(exceptionMessage(e));				
+		}
+		finally {
+			try {reader.close();	}
+			catch (IOException ioe) {}
+		}
+		return predicate; 
+	}	 
+	
+	// parse test parameter string, similar to condition
+	// differences: 
+	// (1) quotations will be removed to allow complect expressions
+	//     if strings appears in paramters, use escape characters
+	// (2) a test parameter (predicate) must have at least one argument.   
+	public static ArrayList<Predicate> parseTestParameterString(String inString) throws ParseException {
+		if (inString.equals(""))
+			return new ArrayList<Predicate>();
+		Reader reader = null;
+		ArrayList<Predicate> parameters = null;
+		try {
+			reader = new StringReader(inString) ;
+			MIDParser parser = new MIDParser(reader) ;
+			parameters = parser.parseTestParameterStream(); 
+	    } 
+	    catch (ParseException e) {
+	    	throw new ParseException(inString+": "+exceptionMessage(e));
+	    }
+		catch (TokenMgrError e){
+			throw new ParseException(inString+": "+exceptionMessage(e));				
+		}
+		finally {
+			try {reader.close();	}
+			catch (IOException ioe) {}
+		}
+		return parameters; 
+	}	 
+
+	// parse a substitution string, e.g., "[a/1, b/2]", into a substitution object
+	public static Substitution parseSubstitutionString(String substitutionString) throws ParseException {
+		Reader reader = null;
+		Substitution substitution = null;
+		try {
+			reader = new StringReader(substitutionString) ;
+			MIDParser parser = new MIDParser(reader) ;
+			substitution = parser.parseSubstitutionStream(); 
+	    } 
+	    catch (ParseException e) {
+	    	throw new ParseException(exceptionMessage(e));
+	    }
+		catch (TokenMgrError e){
+			throw new ParseException(exceptionMessage(e));				
+		}
+		finally {
+			try {reader.close();	}
+			catch (IOException ioe) {}
+		}
+		return substitution;
+		
+	}
+	
+	// parse a substitution string, e.g., "[a/1, b/2]", into a variable list, e.g. <a,b>
+	public static ArrayList<String> parseVariablesInSubstitutionString(String substitutionString) throws ParseException {
+		Reader reader = null;
+		ArrayList<String> variables = null;
+		try {
+			reader = new StringReader(substitutionString) ;
+			MIDParser parser = new MIDParser(reader) ;
+			variables = parser.parseVariablesInSubstitutionStream(); 
+	    } 
+	    catch (ParseException e) {
+	    	throw new ParseException(exceptionMessage(e));
+	    }
+		catch (TokenMgrError e){
+			throw new ParseException(exceptionMessage(e));				
+		}
+		finally {
+			try {reader.close();	}
+			catch (IOException ioe) {}
+		}
+		return variables;
+		
+	}
+	
+	
+	// parse a string which is a list of identifiers 
+	public static ArrayList<String> parseIdentifierListString(String inString) throws ParseException {
+		Reader reader = null;
+		ArrayList<String> list = null;
+		try {
+			reader = new StringReader(inString) ;
+			MIDParser parser = new MIDParser(reader) ;
+			list = parser.parseIdentifierListStream(); 
+	    } 
+	    catch (ParseException e) {
+	    	throw new ParseException(exceptionMessage(e));
+	    }
+		catch (TokenMgrError e){
+			throw new ParseException(exceptionMessage(e));				
+		}
+		finally {
+			try {reader.close();	}
+			catch (IOException ioe) {}
+		}
+		return list;
+	}	
+	
+	public static boolean isIdentifier(String inString){
+		try {
+			parseIdentifierString(inString);
+			return true;
+		}
+		catch (ParseException e) {
+			return false;
+		}
+		catch (TokenMgrError e){
+			return false;				
+		}
+	}
+	
+	private static void parseIdentifierString(String inString) throws ParseException {
+		Reader reader = null;
+		try {
+			reader = new StringReader(inString) ;
+			MIDParser parser = new MIDParser(reader) ;
+			parser.parseIdentifierStream();
+	    } 
+	    catch (ParseException e) {
+	    	throw new ParseException(exceptionMessage(e));
+	    }
+		catch (TokenMgrError e){
+			throw new ParseException(exceptionMessage(e));				
+		}
+		finally {
+			try {reader.close();	}
+			catch (IOException ioe) {}
+		}
+	}
+	
+	public static ArrayList<UserDefinedSequences> parseUserDefinedTestSequences(String inString, MID mid) throws ParseException {
+		Reader reader = null;
+		ArrayList<UserDefinedSequences> sequences = null;
+		try {
+			reader = new StringReader(inString) ;
+			MIDParser parser = new MIDParser(reader) ;
+			sequences = parser.parseUserDefinedTestSequenceStream(mid); 
+	    } 
+	    catch (ParseException e) {
+	    	throw new ParseException(exceptionMessage(e));
+	    }
+		catch (TokenMgrError e){
+			throw new ParseException(exceptionMessage(e));				
+		}
+		finally {
+			try {reader.close();	}
+			catch (IOException ioe) {}
+		}
+		return sequences; 
+	}	 
+
+	public static ArrayList<String[]> parseTestFrameworksString(String inString) throws ParseException {
+		Reader reader = null;
+		ArrayList<String[]> frameworks = null;
+		try {
+			reader = new StringReader(inString) ;
+			MIDParser parser = new MIDParser(reader) ;
+			frameworks = parser.parseTestFrameworksStream(); 
+	    } 
+	    catch (ParseException e) {
+	    	throw new ParseException(exceptionMessage(e));
+	    }
+		catch (TokenMgrError e){
+			throw new ParseException(exceptionMessage(e));				
+		}
+		finally {
+			try {reader.close();	}
+			catch (IOException ioe) {}
+		}
+		return frameworks; 	
+	}
+	
+	public static ArrayList<Predicate> parseRPCString(String inString) throws ParseException {
+		Reader reader = null;
+		ArrayList<Predicate> rpc = null;
+		try {
+			reader = new StringReader(inString) ;
+			MIDParser parser = new MIDParser(reader) ;
+			rpc = parser.parseRpcCommaSpecification(); 
+	    } 
+	    catch (ParseException e) {
+	    	rpc = parseRpcColonSpecification(inString);
+	    	if (rpc==null)
+	    		throw new ParseException(inString +" - "+LocaleBundle.bundleString("Incorrect RPC specification"));
+	    }
+		catch (TokenMgrError e){
+	    	rpc = parseRpcColonSpecification(inString);
+	    	if (rpc==null)
+	    		throw new ParseException(inString +" - "+LocaleBundle.bundleString("Incorrect RPC specification"));
+		}
+		finally {
+			try {reader.close();	}
+			catch (IOException ioe) {}
+		}
+		return rpc; 
+	}	 
+	
+	private static ArrayList<Predicate> parseRpcColonSpecification(String inString) throws ParseException {
+		ArrayList<Predicate> rpcs = new ArrayList<Predicate>();
+		StringTokenizer lines = new StringTokenizer(inString, "\n");
+		while (lines.hasMoreTokens()){
+			String rpcString = lines.nextToken();
+			String methodName = null;
+			ArrayList<String> arguments = new ArrayList<String>(); 
+			StringTokenizer rpcStringTokenizer = new StringTokenizer(rpcString, ":");
+			while (rpcStringTokenizer.hasMoreTokens()){
+				if (methodName==null)
+    				methodName = rpcStringTokenizer.nextToken().trim();
+    			else
+    				arguments.add(rpcStringTokenizer.nextToken().trim());
+    		}
+			if (!isIdentifier(methodName))
+				throw new ParseException(inString +" - "+LocaleBundle.bundleString("Incorrect RPC specification"));	
+			rpcs.add(new Predicate(methodName, arguments));
+		}			
+		return rpcs;
+	}
+	
+	private static String exceptionMessage(ParseException e) {
+		return e.toString().replace("parser.ParseException:", "");
+	}
+
+	private static String exceptionMessage(TokenMgrError e) {
+		return e.toString().replace("parser.TokenMgrError:", "");
+	}
+	
+	public static String removeQuotesFromString(String s) {
+//		return s.replace('"', ' ').trim();
+		if (s.charAt(0)!='"')
+			return s;
+		String temp = s.substring(1, s.length()-1); // remove first and last ""
+//System.out.println("New S: "+ temp.replace("\\\"", "\""));
+		return temp.replace("\\\"", "\""); 
+	}
+	
+	private static Transition convertStateMachineTransitionToNetTransition(
+		String start, 
+		String end, 
+		String event, 
+		String precondition,
+		ArrayList<Predicate> postcondition)	{
+			
+		Transition transition = new Transition(event);
+		ArrayList<Predicate> pre = new ArrayList<Predicate>();
+		pre.add(new Predicate(start, new ArrayList<String>()));
+		transition.setPrecondition(pre);
+		ArrayList<Predicate> post = new ArrayList<Predicate>();
+		post.add(new Predicate(end, new ArrayList<String>()));
+		transition.setPostcondition(post);
+		transition.setArguments(new ArrayList<String>());
+		if (precondition!=null)
+				transition.setGuard(precondition);
+		transition.setEffect(postcondition);
+		
+		transition.collectAllVariables();
+		return transition;
+	}
+	
+}
+
+PARSER_END(MIDParser)
+
+SKIP :
+{ 	  "\t" 
+	| "/*" : WithinComment | " " | "\n" | "\r"
+}
+
+
+<WithinComment> SKIP :
+{
+  "*/" : DEFAULT
+}
+<WithinComment> MORE :
+{
+  <~[]>
+}
+
+SPECIAL_TOKEN :
+{
+  <SINGLE_LINE_COMMENT: "//" (~["\n","\r"])* ("\n"|"\r"|"\r\n")>
+}
+TOKEN : /* IDENTIFIERS */
+{
+  <NOT: "not">
+  |<SEQUENCE: "Sequence">
+  |<INIT: "init">
+  |<TEST: "test">
+  |<FRAMEWORK: "framework">
+  |<IDENTIFIER: <LETTER>(<LETTER>|<DIGIT>|<DOT>|<UNDERSCORE>)*>
+  |<SPECIALVAR: "?"(<LETTER>|<DIGIT>)+>
+  |<SYMBOL: (<DIGIT>)(<LETTER>|<DIGIT>|<DOT>)*>
+  |
+  < #LETTER:
+      [
+       "\u0024",
+       "\u0041"-"\u005a",
+       "\u005f",
+       "\u0061"-"\u007a",
+       "\u00c0"-"\u00d6",
+       "\u00d8"-"\u00f6",
+       "\u00f8"-"\u00ff",
+       "\u0100"-"\u1fff",
+       "\u3040"-"\u318f",
+       "\u3300"-"\u337f",
+       "\u3400"-"\u3d2d",
+       "\u4e00"-"\u9fff",
+       "\uf900"-"\ufaff"
+      ]
+  >
+|
+  < #DIGIT:
+      [
+       "\u0030"-"\u0039",
+       "\u0660"-"\u0669",
+       "\u06f0"-"\u06f9",
+       "\u0966"-"\u096f",
+       "\u09e6"-"\u09ef",
+       "\u0a66"-"\u0a6f",
+       "\u0ae6"-"\u0aef",
+       "\u0b66"-"\u0b6f",
+       "\u0be7"-"\u0bef",
+       "\u0c66"-"\u0c6f",
+       "\u0ce6"-"\u0cef",
+       "\u0d66"-"\u0d6f",
+       "\u0e50"-"\u0e59",
+       "\u0ed0"-"\u0ed9",
+       "\u1040"-"\u1049"
+      ]
+  >
+|
+< STRING : "\""
+   ( ( ~["\"","\\","\n","\r", "\t"])
+   | ("\\" (
+             ["n","t","v","b","r","f","a","\\","?","'","\""]
+            |
+             "0" (["0"-"7"])*
+            |
+             ["1"-"9"] (["0"-"9"])*
+            |
+             ("0x" | "0X") (["0"-"9","a"-"f","A"-"F"])+
+           )
+     )
+   | (["\n","\r", "\t"])
+   )*
+   "\"" 
+>
+  
+  
+}
+
+TOKEN :
+{
+  <LPAREN: "(" >
+| <RPAREN: ")" >
+| <LARROW: "<" >
+| <RARROW: ">" >
+| <LBRACE: "{" >
+| <RBRACE: "}" >
+| <LBRACKET: "[" >
+| <RBRACKET: "]" >
+| <SEMICOLON: ";" >
+| <DOT: "." >
+| <UNDERSCORE: "_" >
+| <COMMA: "," >
+| <COLON: ":">
+| <SLASH: "/">
+}
+
+ArrayList<String> TransitionArgumentSpecification():
+{
+	ArrayList<String> arguments = new ArrayList<String>();
+}
+{
+		[	(<SPECIALVAR>|<IDENTIFIER>) {arguments.add(token.toString());}
+			(<COMMA> 
+			(<SPECIALVAR>|<IDENTIFIER>) {arguments.add(token.toString());}
+			)*
+		]
+		{
+			for (String argument: arguments){
+				if (!MID.isVariable(argument))
+					throw new ParseException("\""+argument+"\" "+LocaleBundle.bundleString("is not a variable"));
+			}	
+			return arguments;
+		}
+}
+
+// for arguments in arc labels and predicates of guard conditions
+String GeneralArgument():
+{}
+{
+	(<SPECIALVAR>|<SYMBOL>|<STRING>|<IDENTIFIER>) {return token.toString();}
+	|
+	("-"<SYMBOL>) {return "-"+token.toString();}		// negative numbers
+}
+
+Predicate PredicateSpecification() :
+{	String  name = ""; 
+	ArrayList<String> arguments = new ArrayList<String>(); 
+	String arg;
+	boolean negation = false;
+	
+	String starter="";
+	boolean isStarterIdentifier=false;
+	boolean isPredicate=false;
+	String relation="";
+	String operator="";
+}
+{
+	[<NOT> {negation = true;}]
+	(
+	  <IDENTIFIER> {starter = token.toString(); name = starter; isStarterIdentifier=true;}
+	  |<SPECIALVAR> {starter=token.toString();}
+	  |<SYMBOL> {starter=token.toString();}
+	  |"-"<SYMBOL> {starter="-"+token.toString();}
+	  |<STRING> {starter=token.toString();}
+	)
+	[
+		<LPAREN>
+			[	(arg=GeneralArgument()) {arguments.add(arg);}
+				(<COMMA> 
+				(arg=GeneralArgument()) {arguments.add(arg);}
+				)*
+			]
+		<RPAREN> {
+			name = starter;
+			isPredicate=true;
+		}
+	]
+	[
+		("="|"<>"|"!="|">"|">="|"<"|"<=") {
+				if (negation)
+					throw new ParseException(LocaleBundle.bundleString("Invalid negation")+": "+starter);
+				if (isPredicate)
+					throw new ParseException(LocaleBundle.bundleString("Incorrect operator")+": "+token.toString());
+				arguments.add(starter);
+				relation = token.toString();
+				if (relation.equals(">"))
+					name = Functions.GreaterThan;
+				else
+				if (relation.equals(">="))
+				 	name = Functions.GreaterThanOrEqualTo;
+				else
+				if (relation.equals("<"))
+					name = Functions.LessThan;
+				else if (relation.equals("<="))
+				 	name = Functions.LessThanOrEqualTo;
+				else {
+				 	name = Functions.EQUALS;
+				 	if (relation.equals("<>") || relation.equals("!="))
+				 		negation = true;
+				}
+			}
+		(arg=ArithmeticExpression()) {arguments.add(arg);}
+	]
+	{
+		if (isPredicate && !isStarterIdentifier)
+			throw new ParseException(LocaleBundle.bundleString("Incorrect identifier")+": "+starter);		
+//System.out.println(new Predicate(name, arguments, negation));			
+		return new Predicate(name, arguments, negation);
+	} 
+}
+
+String ArithmeticExpression() :
+{	String  expStr = ""; 
+	String arg;
+}
+{
+	(
+		(expStr=GeneralArgument()) 
+		| 
+		(	<LPAREN> {expStr = "("+ ArithmeticExpression();}	
+			<RPAREN> {expStr += ")";}
+		)
+	)
+	(
+		("+"|"-"|"*"|"/"|"%") {expStr += token.toString() + ArithmeticExpression();}
+	)* 
+	{
+		return expStr;
+	}
+}
+
+ArrayList<String> collectExpressionVariables() :
+{	ArrayList<String>  variables = new ArrayList<String>(); 
+	String arg;
+}
+{
+	(
+		(arg=GeneralArgument()) 
+			{
+				if (MID.isVariable(arg))
+					variables.add(arg);
+			}
+		| 
+		(	<LPAREN> 
+					{	ArrayList<String> subvars= collectExpressionVariables();
+					 	for (String var: subvars)
+					 		variables.add(var); 
+					}	
+			<RPAREN> 
+		)
+	)
+	(
+		("+"|"-"|"*"|"/"|"%") 
+					{	ArrayList<String> subvars= collectExpressionVariables();
+					 	for (String var: subvars)
+					 		variables.add(var); 
+					 }
+	)* 
+	{
+		return variables;
+	}
+}
+
+String evaluateExpressionValue(Hashtable<String, String> bindings) :
+{	
+	ArrayList<String>  ops = new ArrayList<String>(); 
+	String arg;
+}
+{
+	(
+		(arg=GeneralArgument()) {ops.add(arg);}
+		| 
+		(	<LPAREN> 
+					{	ops.add(evaluateExpressionValue(bindings));
+					}	
+			<RPAREN> 
+		)
+	)
+	(
+		("+"|"-"|"*"|"/"|"%") 
+					{   
+						ops.add(token.toString());
+					}
+		(
+		(arg=GeneralArgument()) 
+			{
+				ops.add(token.toString());
+			}
+		| 
+		(	<LPAREN> 
+					{	ops.add(evaluateExpressionValue(bindings));
+					}	
+			<RPAREN> 
+		)
+		)
+	)* 
+	{
+//for (String item: ops)
+//System.out.println(item);		
+		int index;
+		if (ops.size()>2){
+			index=0;
+			while (index<ops.size()-2){
+				int op = Functions.getArithmeticOperator(ops.get(index+1));
+				if (op==Functions.MULTIPLICATION || op==Functions.DIVISION || op==Functions.MODULUSOP) {
+					ops.set(index, Functions.compute(op, ops.get(index), ops.get(index+2), bindings));
+					ops.remove(index+2);
+					ops.remove(index+1);
+				} else {
+					index+=2;
+				}
+			}
+		}
+		String result = ops.get(0);
+		index = 1;
+		while (index<ops.size()){
+			int op = Functions.getArithmeticOperator(ops.get(index));
+			result = Functions.compute(op, result, ops.get(index+1), bindings);
+			index+=2;
+		}
+		return result;
+	}
+}
+
+// constant values (e.g., in tokens and firings) 
+// IDENTIFIER can be named constants; 
+String ConstantArgument():
+{}
+{
+	(<SYMBOL>|<STRING>|<IDENTIFIER>) {return token.toString();}
+	|
+	("-"<SYMBOL>) {return "-"+token.toString();}
+}
+
+void TupleSpecification(Marking marking) :
+{	String  place = null; 
+	ArrayList<String> arguments = new ArrayList<String>(); 
+	String arg;
+}
+{
+	<IDENTIFIER> { place = token.toString();}
+	[
+	<LPAREN>
+		[	
+			(arg=ConstantArgument()) {arguments.add(arg);}
+			(<COMMA> 
+			 (arg=ConstantArgument()) {arguments.add(arg);}
+			)*
+		]
+	<RPAREN>
+	]
+	{
+		for (String argument: arguments)
+			if (MID.isVariable(argument)) {
+				throw new ParseException(LocaleBundle.bundleString("init or goal state contains the following variable")+" \""+argument+"\".");				
+			}
+		marking.addTuple(place, TupleFactory.createTuple(arguments));
+	} 
+}
+
+void TokenInPlace(ArrayList<Tuple> tokenList) :
+{	
+	ArrayList<String> arguments = new ArrayList<String>(); 
+	String arg;
+}
+{
+	<LPAREN>
+		[	
+			(arg=ConstantArgument()) {arguments.add(arg);}
+			(<COMMA> 
+			 (arg=ConstantArgument()) {arguments.add(arg);}
+			)*
+		]
+	<RPAREN>
+	{
+		for (String argument: arguments)
+			if (MID.isVariable(argument)) {
+				throw new ParseException(LocaleBundle.bundleString("init or goal state contains the following variable")+" \""+argument+"\".");				
+			}
+		tokenList.add(TupleFactory.createTuple(arguments));
+	} 
+}
+
+private Tuple parseTokenFromDataFile() :
+{	
+	ArrayList<String> arguments = new ArrayList<String>(); 
+	String arg;
+}
+{
+	(
+	(   <LPAREN>
+		[	
+			(arg =ConstantArgument()) {arguments.add(arg);}
+			(<COMMA> 
+			 (arg =ConstantArgument()) {arguments.add(arg);}
+			)*
+		]
+	    <RPAREN>
+	)
+	|
+	(	
+		(arg =ConstantArgument()) {arguments.add(arg);}
+		(<COMMA> 
+		 (arg =ConstantArgument()) {arguments.add(arg);}
+		)*
+	)
+	)
+	{
+		for (String argument: arguments){
+			if (MID.isVariable(argument)) {
+				throw new ParseException(LocaleBundle.bundleString("init or goal state contains the following variable")+" \""+argument+"\".");				
+			}
+		}
+		return TupleFactory.createTuple(arguments);
+	} 
+}
+
+
+private ArrayList<ArrayList<String>> parseArcLabelList():
+{
+	ArrayList<String> arcLabel; 
+	ArrayList<ArrayList<String>> arcLabelList = new ArrayList<ArrayList<String>>();
+}
+{ 	(arcLabel = ArcLabel()) { arcLabelList.add(arcLabel);}
+	(
+	"&" { arcLabelList.add(ArcLabel());}
+	)*
+	<EOF> 
+	{
+		if (arcLabelList.size()>1){
+			int argCount = arcLabelList.get(0).size();
+			for (int i=1; i<arcLabelList.size(); i++)
+				if (arcLabelList.get(i).size()!=argCount)
+					throw new ParseException(LocaleBundle.bundleString("Incorrect multiple labels"));
+		}
+		return arcLabelList; 	
+	}
+}
+
+ArrayList<String> ArcLabel() :
+{ 
+	ArrayList<String> arguments = new ArrayList<String>(); 
+	String arg;
+}
+{
+	[
+	(<LARROW>
+		[	
+			(arg=GeneralArgument()) {arguments.add(arg);}
+			(<COMMA> 
+			 (arg=GeneralArgument()) {arguments.add(arg);}
+			)*
+		]
+	<RARROW>
+	)
+	|
+			(arg=GeneralArgument()) {arguments.add(arg);}
+			(<COMMA> 
+			 (arg=GeneralArgument()) {arguments.add(arg);}
+			)*
+	]
+	{
+		return arguments;
+	} 
+}
+
+//
+// the following are for partial MID speciciation from given strings 
+//
+private ArrayList<Predicate> parseConditionStream():
+{
+	Predicate predicate; 
+	ArrayList<Predicate> condition = new ArrayList<Predicate>();
+}
+{ 	(predicate = PredicateSpecification()) { condition.add(predicate);}
+	(
+	<COMMA> { condition.add(PredicateSpecification());}
+	)*
+	<EOF> 
+	{
+		return condition; 	
+	}
+}
+
+private Predicate parseTransitionSignatureStream() :
+{
+	String name;
+	ArrayList<String> arguments = null; 
+}
+{
+	<IDENTIFIER>  {name = token.toString(); }
+	[
+		<LPAREN> {arguments = TransitionArgumentSpecification();}
+		<RPAREN>
+	]
+	<EOF>
+	{
+		return new Predicate(name, arguments);
+	}
+}
+
+private GoalProperty parseGoalPropertyStream(String propertyString):
+{
+	Predicate predicate;
+	String propertyName = MID.DEFAULT_GOAL_TAG; 
+	ArrayList<Predicate> condition = new ArrayList<Predicate>();
+}
+{ 
+	[
+		"["
+		<IDENTIFIER> {propertyName=token.toString();}
+		"]"
+	]	
+	(predicate = PredicateSpecification()) { condition.add(predicate);}
+	(
+	<COMMA> { condition.add(PredicateSpecification());}
+	)*
+	<EOF> 
+	{
+		GoalProperty propertyTransition = new GoalProperty(propertyName, propertyString);
+		propertyTransition.setPrecondition(condition);
+		propertyTransition.transformFromContract();
+		propertyTransition.collectAllVariables();
+		return propertyTransition; 	
+	}
+}
+
+private AssertionProperty parseAssertionPropertyStream(String assertionString):
+{
+	String assertionName = ""; 
+	Predicate ifPredicate;
+	ArrayList<Predicate> ifCondition = new ArrayList<Predicate>();
+	Predicate thenPredicate;
+	ArrayList<Predicate> thenCondition = new ArrayList<Predicate>();
+}
+{ 
+	[
+		"["
+		<IDENTIFIER> {assertionName=token.toString();}
+		"]"
+	]	
+	(ifPredicate = PredicateSpecification()) { ifCondition.add(ifPredicate);}
+	(
+	<COMMA> { ifCondition.add(PredicateSpecification());}
+	)*
+	[
+	("->" | "=>")
+	(thenPredicate = PredicateSpecification()) { thenCondition.add(thenPredicate);}
+	(
+	<COMMA> { thenCondition.add(PredicateSpecification());}
+	)*	
+	]
+	<EOF> 
+	{
+		Transition ifClause = new Transition(assertionName);
+		ifClause.setPrecondition(ifCondition);
+		ifClause.transformFromContract();
+		ifClause.collectAllVariables();
+
+		Transition thenClause = new Transition(assertionName);
+		thenClause.setPrecondition(thenCondition);
+		thenClause.transformFromContract();
+		thenClause.collectAllVariables();
+		
+		if (thenCondition.size()>0)
+			return new AssertionProperty(assertionString, assertionName, ifClause, thenClause);
+		else
+			return new AssertionProperty(assertionString, assertionName, thenClause, ifClause);		 	
+	}
+}
+
+private Marking parseMarkingStream() :
+{
+	Marking marking = new Marking();
+}
+{	
+	(TupleSpecification(marking))
+	(<COMMA> {TupleSpecification(marking);}
+	)*
+	<EOF>
+	{
+		return marking;
+	}
+}
+
+private ArrayList<Tuple> parseTokenStream() :
+{
+	ArrayList<Tuple> tokenList = new ArrayList<Tuple>();
+}
+{
+	(TokenInPlace(tokenList))
+	(<COMMA> {TokenInPlace(tokenList);}
+	)*
+	<EOF>
+	{
+		return tokenList;
+	}
+}
+
+
+private void parseNamedIntegersStream() :
+{	String symbol=""; 
+	String value=""; 
+}
+{
+	(
+	<IDENTIFIER> {symbol=token.toString();
+				if (symbol.length()==0)
+					throw new ParseException(LocaleBundle.bundleString("Incorrect constant name")+" :"+symbol);
+				if (!Character.isUpperCase(symbol.charAt(0)))
+					throw new ParseException(LocaleBundle.bundleString("Incorrect constant name")+" :"+symbol);	
+				value = "";				
+			}
+	"=" 
+	[
+		("-") {value=token.toString();} 
+	]
+	<SYMBOL> {value += token.toString();
+				try {
+					Integer.parseInt(value);
+				}	
+				catch (Exception e) {
+					throw new ParseException(LocaleBundle.bundleString("Incorrect constant value")+" :"+value);
+				}
+				MID.putSymbolNumber(symbol, value);	
+			}
+	[<COMMA>|<SEMICOLON>]
+	)*
+	<EOF> 
+}
+
+private void parseEnumerationStream() :
+{	int index=0; 
+}
+{
+	(
+	<IDENTIFIER> {	String symbol=token.toString();
+				if (symbol.length()==0)
+					throw new ParseException(LocaleBundle.bundleString("Incorrect constant name")+" :"+symbol);
+				if (!Character.isUpperCase(symbol.charAt(0)))
+					throw new ParseException(LocaleBundle.bundleString("Incorrect constant name")+" :"+symbol);
+				MID.putSymbolNumber(symbol, Integer.toString(index));	
+				index++;
+			}
+	[<COMMA>|<SEMICOLON>]
+	)*
+	<EOF> 
+}
+
+
+private Predicate parseMappingPredicateStream() :
+{
+	Predicate predicate; 
+}
+{ 	(predicate = PredicateSpecification())
+	<EOF> 
+	{
+		return predicate; 	
+	}
+}
+
+private Substitution parseSubstitutionStream() :
+{
+	Hashtable<String, String> bindings = new Hashtable <String, String>();
+	String variable;   
+	String value; 
+}
+{
+	[<LBRACKET>]
+	(
+		(<IDENTIFIER>|<SPECIALVAR>) { variable = token.toString();}
+		<SLASH>
+		(value=ConstantArgument()) {bindings.put(variable, value);}
+		[<COMMA>]
+		
+	)*
+	[<RBRACKET>]
+	<EOF>
+	{
+		return new Substitution(bindings);
+	}
+}
+
+private ArrayList<String> parseVariablesInSubstitutionStream() :
+{
+	ArrayList<String> variables = new ArrayList<String>();
+}
+{
+	[<LBRACKET>]
+	(
+		(<IDENTIFIER>|<SPECIALVAR>) {variables.add(token.toString());}
+		<SLASH>
+		(<STRING>|<SYMBOL>|<IDENTIFIER>|"-"<SYMBOL>) 
+		[<COMMA>]
+		
+	)*
+	[<RBRACKET>]
+	<EOF>
+	{
+		return variables;
+	}
+}
+
+
+private ArrayList<String> parseIdentifierListStream() :
+{
+	ArrayList<String> list = new ArrayList<String>(); 
+}
+{
+	<IDENTIFIER> { list.add(token.toString());}
+	(
+		<COMMA> 
+		<IDENTIFIER> { list.add(token.toString());}
+	)*
+	<EOF>
+	{
+		
+		return list;
+	}
+}
+
+private void parseIdentifierStream() :
+{
+}
+{
+	<IDENTIFIER>
+	<EOF> 
+}
+
+private void parseObjectStream() :
+{
+}
+{
+	(<IDENTIFIER>|<STRING>|<SYMBOL>|"-"<SYMBOL>) {
+		if (MID.isVariable(token.toString()))
+			throw new ParseException(LocaleBundle.bundleString("Object spec contains the following variable")+token.toString());	
+	}
+	<EOF> 
+}
+
+
+private ArrayList<Predicate> parseTestParameterStream():
+{
+	ArrayList<Predicate> tests = new ArrayList<Predicate>();
+	Predicate predicate = null;
+}
+{
+	(predicate = parseOneTestParameter()) {tests.add(predicate);}
+	(<COMMA>
+		(predicate = parseOneTestParameter()) {tests.add(predicate);}
+	)*
+	<EOF>
+	{
+		return tests; 
+	}
+}
+
+private Predicate parseOneTestParameter():
+{	String event = null;
+	ArrayList<String> arguments = new ArrayList<String>();
+	String arg; 
+}
+{
+		<IDENTIFIER> { event = token.toString(); }
+		<LPAREN> 
+		(arg=ConstantArgument()) {arguments.add(removeQuotesFromString(arg));}
+		(
+			<COMMA> 
+			(arg=ConstantArgument()) {arguments.add(removeQuotesFromString(arg));}
+		)*
+		<RPAREN> 
+		{
+			return new Predicate(event, arguments);
+		}
+}
+
+private ArrayList<UserDefinedSequences> parseUserDefinedTestSequenceStream(MID mid):
+{
+	ArrayList<UserDefinedSequences> allSequences = UserDefinedSequences.initializeALLSequences(mid);
+	int initMarkingIndex = 0;
+}
+{
+	(<SEQUENCE> 	
+	[
+	<LPAREN>
+	<INIT>
+	<SYMBOL> {  
+				try {
+					initMarkingIndex = Integer.parseInt(token.toString());
+				} catch (Exception e) {
+					throw new ParseException(mid.getSequencesFile()+ ": Encountered "+ token.toString()+": expecting non-negative number.");				
+				} 
+				if (initMarkingIndex<0 || initMarkingIndex>mid.getInitialMarkings().size())
+					throw new ParseException(mid.getSequencesFile()+ ": Incorrect initial state index: "+ token.toString());  
+			}
+	<RPAREN>
+	]
+	{
+		ArrayList<Firing> firings = parseFiringList(mid);
+		allSequences.get(initMarkingIndex).addSequence(new FiringSequence(firings));
+	}
+	)*
+	<EOF>
+	{
+		return allSequences;
+	}
+}
+
+private ArrayList<Firing> parseFiringList(MID mid):
+{
+	ArrayList<Firing> firings = new ArrayList<Firing>();
+	Firing firing; 
+}
+{ 
+	(
+	(firing = parseFiring(mid)) { firings.add(firing);}
+	[<COMMA>]
+	)+
+	{
+		return firings;
+	}
+	
+}
+
+private Firing parseFiring(MID mid):
+{
+	Transition transition; 
+	Hashtable<String, String> bindings = new Hashtable <String, String>();
+	String variable;
+	String arg;   
+}
+{
+	(transition = parseTransitionInSequence(mid))
+	[
+		<LBRACKET>
+		(<IDENTIFIER>|<SPECIALVAR>) { variable = token.toString();
+									if (!transition.hasVariable(variable))
+										throw new ParseException(mid.getSequencesFile()+ ": variable "+ variable +" not found for the transition.");				
+									}
+		<SLASH>
+		(arg=ConstantArgument()) {bindings.put(variable, arg);}
+		(
+			<COMMA>
+			(<IDENTIFIER>|<SPECIALVAR>) { variable = token.toString();
+									if (!transition.hasVariable(variable))
+										throw new ParseException(mid.getSequencesFile()+ ": variable "+ variable +" not found for the transition.");				
+									}
+			<SLASH>
+			(arg=ConstantArgument()) {bindings.put(variable, arg);}	
+		)*
+		<RBRACKET>
+	]
+	{
+		ArrayList<String> arguments = transition.getArguments();
+		if (arguments==null) 
+			arguments = transition.getAllVariables();
+		if (arguments!=null){ 
+			for (String argument: arguments)
+				if (!bindings.containsKey(argument))
+					throw new ParseException(mid.getSequencesFile()+ ": Argument "+ argument +" is not bound in "
+									+transition.getEvent()+" "+new Substitution(bindings).printAllBindings() +" for the following transition\n"+transition);					
+		}
+		return new Firing(transition, new Substitution(bindings));
+	}
+
+}
+
+private Transition parseTransitionInSequence(MID mid):
+{
+	String event = "";
+	int transitionIndex = -1;
+	Transition transition = null;
+}
+{
+	(
+	<IDENTIFIER> { event = token.toString();}
+	[
+	<SYMBOL> { 
+				try {
+					transitionIndex = Integer.parseInt(token.toString());
+				} catch (Exception e) {
+					throw new ParseException(mid.getSequencesFile()+ ": "+ token.toString()+": expecting non-negative number.");				
+				} 
+				if (transitionIndex<0 || transitionIndex > mid.getTransitions().size())
+					throw new ParseException(mid.getSequencesFile()+ ": Incorrect transition index: "+ token.toString()+".");
+				transition = mid.getTransitionAtIndex(transitionIndex);
+			}	
+	]
+	)  
+	{
+		if (transition==null){
+			ArrayList<Transition> transitions = mid.getTransitionsForEvent(event);
+			if (transitions!=null && transitions.size()>0)
+				transition = transitions.get(0);
+			else
+				throw new ParseException(mid.getSequencesFile()+ ": Transition: "+ event +" not defined.");
+		}
+		return transition;
+	}
+
+}
+
+
+// Parse test frameworks
+private ArrayList<String[]> parseTestFrameworksStream():
+{
+	ArrayList<String[]> testFrameworks = new ArrayList<String[]>();
+	String[] frameworkSpec;
+}
+{
+	(
+	<TEST>
+	<FRAMEWORK>
+	<STRING> {frameworkSpec = new String[4];
+			  frameworkSpec[0] = removeQuotesFromString(token.toString());
+			}
+	<COMMA>
+	<STRING> {frameworkSpec[1] = removeQuotesFromString(token.toString());}
+	<COMMA>
+	<STRING> {frameworkSpec[2] = removeQuotesFromString(token.toString()).replaceAll(";", ";\n");}
+	<COMMA>
+	<STRING> {frameworkSpec[3] = removeQuotesFromString(token.toString());
+			testFrameworks.add(frameworkSpec);
+			}
+	)*
+	<EOF>
+	{
+		return testFrameworks;
+	}
+}
+
+ArrayList<Predicate> parseRpcCommaSpecification() :
+{	ArrayList<Predicate> rpcs = new ArrayList<Predicate>();
+	String  methodName = null; 
+	ArrayList<String> arguments = null; 
+	String arg;
+}
+{
+	(<IDENTIFIER> { methodName = token.toString(); arguments= new ArrayList<String>(); arg="";}
+		[
+		<LPAREN>
+		[	
+			(arg=ConstantArgument()) {arguments.add(arg);}
+			(<COMMA> 
+			(arg=ConstantArgument()) {arguments.add(arg);}
+			)*
+		]
+		<RPAREN>
+		]
+		{
+			rpcs.add(new Predicate(methodName, arguments));
+		}
+	)*
+	<EOF>
+	{
+		return rpcs;
+	} 
+}
+
+
+

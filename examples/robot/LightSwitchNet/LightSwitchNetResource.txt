@@ -1,0 +1,17 @@
+*** Settings ***
+Library  Operating System
+
+
+*** Keywords ***
+flipSwitch1
+  Run  lightswitchExe.exe flipA
+
+flipSwitch2
+  Run  lightswitchExe.exe flipB
+
+light  [arguments]  ${switchValue}
+  ${actual}=  Run  lightswitchExe.exe check
+  ${expected}=  Call Method  ${switchValue}  lower
+  Should Contain  ${actual}  ${expected}
+
+

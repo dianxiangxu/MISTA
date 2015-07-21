@@ -1,0 +1,136 @@
+<html>
+<head>
+<script type="text/javascript">
+
+function flip()
+{
+  var flipVal = (["Heads", "Tails"][Math.floor(Math.random() * 2)])
+  document.getElementById("btnFlip").value = flipVal
+  document.getElementById(flipVal + "Count").innerHTML = parseInt(document.getElementById(flipVal + "Count").innerHTML) + 1
+}
+
+function adminTable()
+{
+  var tableOut = '<table border="1"><thead><tr><th>User</th><th>Wins</th><th>Losses</th><th>Ties</th><th>Reset</th><th>Remove</th></tr></thead><tbody id="adminBody">'
+  for (var username in userbase) {
+    if (username != "admin") {
+      tableOut = tableOut + adminRow(username)
+    }
+  } 
+  tableOut = tableOut + '</tbody></table>'
+  document.getElementById("adminTable").innerHTML = tableOut
+}
+
+function genLoginPage()
+{
+  document.getElementById('rpsBody').innerHTML = '<div id="loginPage"> \
+    <h1>Login</h1> \
+        <label id="lblUsername">Username: </label><input id="txtUsername" type="text" name="uname"><br /> \
+        <label id="lblPassword">Password: </label><input id="txtPassword" type="password" name="pwd"><br /> \
+        <input id="btnLogin" type="button" name="login" value="Login" onclick="login()"> \
+        <div id="lblResult">Enter a Username(admin) and Password(pass).</div> \
+        <div id="lblAddUser">Or <a href="javascript:void(0)" onclick="genAddUserPage()">add a new user</a></div> \
+      </div>'
+}
+
+function genTooManyFailsPage()
+{
+  document.getElementById('rpsBody').innerHTML = '<div id="tooManyFailsPage"> \
+    <h1>Too Many Failed Password Attempts</h1> \
+        Account disabled due to too many failed password attempts, <a href="javascript:void(0)" onclick="genLoginPage()">login</a> as the administrator to re-enable this account.\
+    </div>"'
+}
+
+function genAddUserPage()
+{
+  document.readyState = "loading"
+  document.getElementById('rpsBody').innerHTML = '<div id="addUserPage">\
+    <h1>Add New User</h1>\
+      <label id="lblUsername">Username: </label><input id="txtUsername" type="text" name="uname"><br />\
+      <label id="lblPassword">Password: </label><input id="txtPassword" type="password" name="pwd"><br />\
+      <input id="btnAddUser" type="button" name="addUser" value="Add User" onclick="addUser()">\
+      <div id="lblResult"></div>\
+      <div id="lblLoginPage">Or go to <a href="javascript:void(0)" onclick="genLoginPage()">login page</a>.</div>\
+    </div>'
+  document.readyState = "complete"
+}
+
+function genRpsGamePage(username)
+{
+  document.getElementById('rpsBody').innerHTML = '<div id="rpsGamePage">\
+    <h1>Rock, Paper, Scissors</h1>\
+      <div id="lblLoginPage">Return to <a href="javascript:void(0)" onclick="genLoginPage()">login page</a>.</div>\
+      <table border="1">\
+        <thead><tr><th>Wins</th><th>Losses</th><th>Ties</th></tr></thead>\
+        <tbody id="rpsTotals"></tbody>\
+      </table>\
+      <table id="rpsRound">\
+        <thead><tr><th>Player</th><th>Computer</th><th>Result</th></tr>\
+        <tbody id="rpsResult"><tr><td id="lblPlayer"/><td id="lblComputer"/><td id="lblResult"/></tr></tbody>\
+      </table>\
+      Pick an action:<br/>\
+      <input id="btnRock" type="button" value="Rock" onclick="playRps(\'Rock\', \'' + username + '\')"/>\
+      <input id="btnPaper" type="button" value="Paper" onclick="playRps(\'Paper\', \'' + username + '\')"/>\
+      <input id="btnPaper" type="button" value="Scissors" onclick="playRps(\'Scissors\', \'' + username + '\')"/>\
+    </div>'
+  rpsTableBody("a")
+}
+
+function playRps(playerThrow, username)
+{
+  var computerThrow = generateRps()
+  var result = compareRps(playerThrow, computerThrow)
+  document.getElementById("lblPlayer").innerHTML = playerThrow
+  document.getElementById("lblComputer").innerHTML = computerThrow
+  document.getElementById("lblResult").innerHTML = result
+
+  if(result == "Win") {
+    userbase[username].wins = userbase[username].wins + 1
+  } else if(result == "Lose") {
+    userbase[username].losses = userbase[username].losses + 1
+  } else {
+    userbase[username].ties = userbase[username].ties + 1
+  }
+
+  rpsTableBody(username)
+}
+
+function rpsTableBody(username)
+{
+  document.getElementById("rpsTotals").innerHTML = "<tr>" +
+    "<td id='lblWins'>" + userbase[username].wins + "</td>" +
+    "<td id='lblLosses'>" + userbase[username].losses + "</td>" +
+    "<td id='lblTies'>" + userbase[username].ties + "</td></tr>" 
+}
+
+
+function genRpsAdminPage()
+{
+  document.getElementById('rpsBody').innerHTML = '<div id="rpsAdminPage">\
+    <h1>RPS Administration</h1>\
+      <div id="lblLoginPage">Return to <a href="javascript:void(0)" onclick="genLoginPage()">login page</a>.</div>\
+      <div id="adminTable">\
+      <table border="1">\
+        <thead><tr><th>User</th><th>Wins</th><th>Losses</th><th>Ties</th><th>Reset</th><th>Remove</th></tr></thead>\
+        <tbody id="adminBody"></tbody>\
+      </table>\
+      </div>\
+    </div>'
+  adminTable()
+}
+
+
+</script>
+</head>
+<body bgcolor="white">
+
+  <h1>Coinflipper</h1> 
+    Click the button and flip the coin.
+    <input id="btnFlip" type="button" name="flip" value="Heads" onclick="flip()"> 
+    <table><tr><th>Heads</th><th>Tails</th></tr>
+    <tr><td id="HeadsCount">0</td><td id="TailsCount">0</td></tr>
+    </table>
+
+</body>
+</html> 
+

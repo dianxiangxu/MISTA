@@ -1,0 +1,248 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<pnml>
+<net id="Net-One" type="PrT net">
+<tokenclass id="Default" enabled="true" red="0" green="0" blue="0"/>
+<labels x="20" y="580" width="814" height="41" border="true">
+<text>Important: The scope of a variable in an arc is determined by the associated transition. If different occurrences of the same variable name are in the arcs and guard conditions associated with the same transition, then they are identical. For example, x in the arc from P1 to T1 and x in the guard condition of T1 are identical. However, x in the arc from P1 to T1 and x in the arc from P2 to T3 are independent. </text>
+</labels>
+<labels x="20" y="521" width="811" height="39" border="true">
+<text>Important: the state space of a net includes all states that can be reached from the given initial states. This example has an infinite number of reachable states. Such a model should not be used for test generation unless more constraints are added to make the state space finite. </text>
+</labels>
+<labels x="547" y="140" width="110" height="25" border="true">
+<text>INIT P2(2)</text>
+</labels>
+<labels x="20" y="332" width="816" height="169" border="true">
+<text>This is an introduction to general high-level function nets, based on low-level nets:
+(1) places (circles) can hold structured data (tokens as tuples).   
+(2) transitions(rectangles) can represent parameterized events or actions by using variables. Transitions can be associated with a guard condition . 
+(3) Arcs can be labeled with a list of variables and/or constants. A variable starts with a lower-case letter or ?. A constant typically starts with a digit or upper-case letter.  
+(4) Token are tuples. Tokens in low-level nets are tuples with no argument, i.e., (). All tokens in the same place must have the same number of arguments. 
+(5) A marking is a distribution of tokens in places. It represents one state of the model. 
+(6) Enabled or firable: a transition is said to be enabled or firable only if 
+      (a) each input place has a token that matches the variables/constants in the arc label, 
+      (b) each inhibitor place has no token that matches the variables/constants in the arc label,
+      (c) the guard condition evaluates to true.
+(7) Firing an enabled transition removes a unified token from each input place and adds a new token to each output place. </text>
+</labels>
+<labels x="20" y="20" width="635" height="39" border="true">
+<text>This model represents repetative two-step tasks, where the first step is either T1 or T2 and the second step is T3. T1 increments its input by 1, whereas T2 increments its input by 2. T3 decrements its input by 1. </text>
+</labels>
+<place id="P1">
+<graphics>
+<position x="75.0" y="148.0"/>
+</graphics>
+<name>
+<value>P1</value>
+<graphics>
+<offset x="-17.0" y="17.0"/>
+</graphics>
+</name>
+<initialMarking>
+<value>Default,(1)</value>
+<graphics>
+<offset x="0.0" y="0.0"/>
+</graphics>
+</initialMarking>
+<capacity>
+<value>0</value>
+</capacity>
+</place>
+<place id="P2">
+<graphics>
+<position x="270.0" y="148.0"/>
+</graphics>
+<name>
+<value>P2</value>
+<graphics>
+<offset x="27.0" y="42.0"/>
+</graphics>
+</name>
+<initialMarking>
+<value>Default,</value>
+<graphics>
+<offset x="0.0" y="0.0"/>
+</graphics>
+</initialMarking>
+<capacity>
+<value>0</value>
+</capacity>
+</place>
+<transition id="T1">
+<graphics>
+<position x="165.0" y="103.0"/>
+</graphics>
+<name>
+<value>T1</value>
+<graphics>
+<offset x="62.0" y="-11.0"/>
+</graphics>
+</name>
+<orientation>
+<value>0</value>
+</orientation>
+<guard>
+<value>y=x+1</value>
+</guard>
+<effect>
+<value/>
+</effect>
+<rate>
+<value>1.0</value>
+</rate>
+<timed>
+<value>true</value>
+</timed>
+<infiniteServer>
+<value>false</value>
+</infiniteServer>
+<priority>
+<value>1</value>
+</priority>
+</transition>
+<transition id="T2">
+<graphics>
+<position x="165.0" y="193.0"/>
+</graphics>
+<name>
+<value>T2</value>
+<graphics>
+<offset x="73.0" y="33.0"/>
+</graphics>
+</name>
+<orientation>
+<value>0</value>
+</orientation>
+<guard>
+<value>z=x+2</value>
+</guard>
+<effect>
+<value/>
+</effect>
+<rate>
+<value>1.0</value>
+</rate>
+<timed>
+<value>true</value>
+</timed>
+<infiniteServer>
+<value>false</value>
+</infiniteServer>
+<priority>
+<value>1</value>
+</priority>
+</transition>
+<transition id="T3">
+<graphics>
+<position x="390.0" y="148.0"/>
+</graphics>
+<name>
+<value>T3</value>
+<graphics>
+<offset x="53.0" y="-24.0"/>
+</graphics>
+</name>
+<orientation>
+<value>0</value>
+</orientation>
+<guard>
+<value>y=x-1</value>
+</guard>
+<effect>
+<value/>
+</effect>
+<rate>
+<value>1.0</value>
+</rate>
+<timed>
+<value>true</value>
+</timed>
+<infiniteServer>
+<value>false</value>
+</infiniteServer>
+<priority>
+<value>1</value>
+</priority>
+</transition>
+<arc id="P1 to T1" source="P1" target="T1">
+<graphics/>
+<inscription>
+<value>Default,x</value>
+<graphics/>
+</inscription>
+<tagged>
+<value>false</value>
+</tagged>
+<arcpath id="000" x="101" y="155" curvePoint="false"/>
+<arcpath id="001" x="171" y="115" curvePoint="false"/>
+<type value="normal"/>
+</arc>
+<arc id="P1 to T2" source="P1" target="T2">
+<graphics/>
+<inscription>
+<value>Default,x</value>
+<graphics/>
+</inscription>
+<tagged>
+<value>false</value>
+</tagged>
+<arcpath id="000" x="99" y="168" curvePoint="false"/>
+<arcpath id="001" x="171" y="205" curvePoint="false"/>
+<type value="normal"/>
+</arc>
+<arc id="P2 to T3" source="P2" target="T3">
+<graphics/>
+<inscription>
+<value>Default,x</value>
+<graphics/>
+</inscription>
+<tagged>
+<value>false</value>
+</tagged>
+<arcpath id="000" x="296" y="162" curvePoint="false"/>
+<arcpath id="001" x="396" y="160" curvePoint="false"/>
+<type value="normal"/>
+</arc>
+<arc id="T1 to P2" source="T1" target="P2">
+<graphics/>
+<inscription>
+<value>Default,y</value>
+<graphics/>
+</inscription>
+<tagged>
+<value>false</value>
+</tagged>
+<arcpath id="000" x="181" y="115" curvePoint="false"/>
+<arcpath id="001" x="268" y="153" curvePoint="false"/>
+<type value="normal"/>
+</arc>
+<arc id="T2 to P2" source="T2" target="P2">
+<graphics/>
+<inscription>
+<value>Default,z</value>
+<graphics/>
+</inscription>
+<tagged>
+<value>false</value>
+</tagged>
+<arcpath id="000" x="181" y="205" curvePoint="false"/>
+<arcpath id="001" x="268" y="166" curvePoint="false"/>
+<type value="normal"/>
+</arc>
+<arc id="T3 to P1" source="T3" target="P1">
+<graphics/>
+<inscription>
+<value>Default,y</value>
+<graphics/>
+</inscription>
+<tagged>
+<value>false</value>
+</tagged>
+<arcpath id="000" x="406" y="160" curvePoint="false"/>
+<arcpath id="001" x="464" y="215" curvePoint="true"/>
+<arcpath id="002" x="361" y="277" curvePoint="true"/>
+<arcpath id="003" x="106" y="277" curvePoint="true"/>
+<arcpath id="004" x="81" y="174" curvePoint="true"/>
+<type value="normal"/>
+</arc>
+</net>
+</pnml>

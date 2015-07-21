@@ -1,0 +1,455 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<pnml>
+<net id="Net-One" type="PrT net">
+<tokenclass id="Default" enabled="true" red="0" green="0" blue="0"/>
+<labels x="20" y="20" width="172" height="17" border="true">
+<text>DATA BlocksNetData.xls</text>
+</labels>
+<place id="clear">
+<graphics>
+<position x="420.0" y="195.0"/>
+</graphics>
+<name>
+<value>clear</value>
+<graphics>
+<offset x="82.0" y="13.0"/>
+</graphics>
+</name>
+<initialMarking>
+<value>Default,(3), (6)</value>
+<graphics>
+<offset x="0.0" y="0.0"/>
+</graphics>
+</initialMarking>
+<capacity>
+<value>0</value>
+</capacity>
+</place>
+<place id="holding">
+<graphics>
+<position x="195.0" y="195.0"/>
+</graphics>
+<name>
+<value>holding</value>
+<graphics>
+<offset x="43.0" y="46.0"/>
+</graphics>
+</name>
+<initialMarking>
+<value>Default,</value>
+<graphics>
+<offset x="0.0" y="0.0"/>
+</graphics>
+</initialMarking>
+<capacity>
+<value>0</value>
+</capacity>
+</place>
+<place id="on">
+<graphics>
+<position x="300.0" y="195.0"/>
+</graphics>
+<name>
+<value>on</value>
+<graphics>
+<offset x="3.0" y="9.0"/>
+</graphics>
+</name>
+<initialMarking>
+<value>Default,</value>
+<graphics>
+<offset x="0.0" y="0.0"/>
+</graphics>
+</initialMarking>
+<capacity>
+<value>0</value>
+</capacity>
+</place>
+<place id="ontable">
+<graphics>
+<position x="75.0" y="195.0"/>
+</graphics>
+<name>
+<value>ontable</value>
+<graphics>
+<offset x="3.0" y="16.0"/>
+</graphics>
+</name>
+<initialMarking>
+<value>Default,(3), (6)</value>
+<graphics>
+<offset x="0.0" y="0.0"/>
+</graphics>
+</initialMarking>
+<capacity>
+<value>0</value>
+</capacity>
+</place>
+<transition id="pickup(x)">
+<graphics>
+<position x="90.0" y="120.0"/>
+</graphics>
+<name>
+<value>pickup(x)</value>
+<graphics>
+<offset x="0.0" y="1.0"/>
+</graphics>
+</name>
+<orientation>
+<value>90</value>
+</orientation>
+<guard>
+<value/>
+</guard>
+<effect>
+<value/>
+</effect>
+<subnet>
+<value/>
+</subnet>
+<rate>
+<value>1.0</value>
+</rate>
+<timed>
+<value>true</value>
+</timed>
+<infiniteServer>
+<value>false</value>
+</infiniteServer>
+<priority>
+<value>1</value>
+</priority>
+</transition>
+<transition id="putdown(x)">
+<graphics>
+<position x="90.0" y="270.0"/>
+</graphics>
+<name>
+<value>putdown(x)</value>
+<graphics>
+<offset x="14.0" y="39.0"/>
+</graphics>
+</name>
+<orientation>
+<value>90</value>
+</orientation>
+<guard>
+<value/>
+</guard>
+<effect>
+<value/>
+</effect>
+<subnet>
+<value/>
+</subnet>
+<rate>
+<value>1.0</value>
+</rate>
+<timed>
+<value>true</value>
+</timed>
+<infiniteServer>
+<value>false</value>
+</infiniteServer>
+<priority>
+<value>1</value>
+</priority>
+</transition>
+<transition id="stack(x,y)">
+<graphics>
+<position x="300.0" y="270.0"/>
+</graphics>
+<name>
+<value>stack(x,y)</value>
+<graphics>
+<offset x="55.0" y="35.0"/>
+</graphics>
+</name>
+<orientation>
+<value>90</value>
+</orientation>
+<guard>
+<value>x!=y</value>
+</guard>
+<effect>
+<value/>
+</effect>
+<subnet>
+<value/>
+</subnet>
+<rate>
+<value>1.0</value>
+</rate>
+<timed>
+<value>true</value>
+</timed>
+<infiniteServer>
+<value>false</value>
+</infiniteServer>
+<priority>
+<value>1</value>
+</priority>
+</transition>
+<transition id="unstack(x,y)">
+<graphics>
+<position x="300.0" y="120.0"/>
+</graphics>
+<name>
+<value>unstack(x,y)</value>
+<graphics>
+<offset x="62.0" y="-12.0"/>
+</graphics>
+</name>
+<orientation>
+<value>90</value>
+</orientation>
+<guard>
+<value>x!=y</value>
+</guard>
+<effect>
+<value/>
+</effect>
+<subnet>
+<value/>
+</subnet>
+<rate>
+<value>1.0</value>
+</rate>
+<timed>
+<value>true</value>
+</timed>
+<infiniteServer>
+<value>false</value>
+</infiniteServer>
+<priority>
+<value>1</value>
+</priority>
+</transition>
+<arc id="holding to pickup(x)" source="holding" target="pickup(x)">
+<graphics/>
+<inscription>
+<value>Default,any</value>
+<graphics/>
+</inscription>
+<tagged>
+<value/>
+</tagged>
+<arcpath id="000" x="200" y="193" curvePoint="false"/>
+<arcpath id="001" x="160" y="150" curvePoint="true"/>
+<arcpath id="002" x="116" y="132" curvePoint="false"/>
+<type value="inhibitor"/>
+</arc>
+<arc id="holding to unstack(x,y)" source="holding" target="unstack(x,y)">
+<graphics/>
+<inscription>
+<value>Default,any</value>
+<graphics/>
+</inscription>
+<tagged>
+<value/>
+</tagged>
+<arcpath id="000" x="212" y="193" curvePoint="false"/>
+<arcpath id="001" x="250" y="150" curvePoint="true"/>
+<arcpath id="002" x="296" y="132" curvePoint="false"/>
+<type value="inhibitor"/>
+</arc>
+<arc id="ontable to pickup(x)" source="ontable" target="pickup(x)">
+<graphics/>
+<inscription>
+<value>Default,x</value>
+<graphics/>
+</inscription>
+<tagged>
+<value>false</value>
+</tagged>
+<arcpath id="000" x="90" y="192" curvePoint="false"/>
+<arcpath id="001" x="96" y="136" curvePoint="false"/>
+<type value="normal"/>
+</arc>
+<arc id="P2 to T2" source="holding" target="putdown(x)">
+<graphics/>
+<inscription>
+<value>Default,x</value>
+<graphics/>
+</inscription>
+<tagged>
+<value>false</value>
+</tagged>
+<arcpath id="000" x="194" y="215" curvePoint="false"/>
+<arcpath id="001" x="106" y="277" curvePoint="false"/>
+<type value="normal"/>
+</arc>
+<arc id="P2 to T3" source="holding" target="stack(x,y)">
+<graphics/>
+<inscription>
+<value>Default,x</value>
+<graphics/>
+</inscription>
+<tagged>
+<value>false</value>
+</tagged>
+<arcpath id="000" x="219" y="215" curvePoint="false"/>
+<arcpath id="001" x="303" y="276" curvePoint="false"/>
+<type value="normal"/>
+</arc>
+<arc id="P3 to T1" source="on" target="unstack(x,y)">
+<graphics/>
+<inscription>
+<value>Default,&lt;x,y&gt;</value>
+<graphics/>
+</inscription>
+<tagged>
+<value>false</value>
+</tagged>
+<arcpath id="000" x="311" y="192" curvePoint="false"/>
+<arcpath id="001" x="312" y="137" curvePoint="false"/>
+<type value="normal"/>
+</arc>
+<arc id="P4 to T0" source="clear" target="pickup(x)">
+<graphics/>
+<inscription>
+<value>Default,x</value>
+<graphics/>
+</inscription>
+<tagged>
+<value>false</value>
+</tagged>
+<arcpath id="000" x="433" y="192" curvePoint="false"/>
+<arcpath id="001" x="427" y="134" curvePoint="true"/>
+<arcpath id="002" x="376" y="75" curvePoint="true"/>
+<arcpath id="003" x="304" y="56" curvePoint="true"/>
+<arcpath id="004" x="224" y="57" curvePoint="true"/>
+<arcpath id="005" x="161" y="72" curvePoint="true"/>
+<arcpath id="006" x="119" y="93" curvePoint="true"/>
+<arcpath id="007" x="101" y="126" curvePoint="true"/>
+<type value="normal"/>
+</arc>
+<arc id="P4 to T1" source="clear" target="unstack(x,y)">
+<graphics/>
+<inscription>
+<value>Default,x</value>
+<graphics/>
+</inscription>
+<tagged>
+<value>false</value>
+</tagged>
+<arcpath id="000" x="426" y="192" curvePoint="false"/>
+<arcpath id="001" x="395" y="151" curvePoint="true"/>
+<arcpath id="002" x="326" y="132" curvePoint="true"/>
+<type value="normal"/>
+</arc>
+<arc id="P4 to T3" source="clear" target="stack(x,y)">
+<graphics/>
+<inscription>
+<value>Default,y</value>
+<graphics/>
+</inscription>
+<tagged>
+<value>false</value>
+</tagged>
+<arcpath id="000" x="417" y="209" curvePoint="false"/>
+<arcpath id="001" x="353" y="238" curvePoint="true"/>
+<arcpath id="002" x="317" y="277" curvePoint="false"/>
+<type value="normal"/>
+</arc>
+<arc id="putdown(x) to ontable" source="putdown(x)" target="ontable">
+<graphics/>
+<inscription>
+<value>Default,x</value>
+<graphics/>
+</inscription>
+<tagged>
+<value>false</value>
+</tagged>
+<arcpath id="000" x="96" y="276" curvePoint="false"/>
+<arcpath id="001" x="88" y="221" curvePoint="false"/>
+<type value="normal"/>
+</arc>
+<arc id="T0 to P2" source="pickup(x)" target="holding">
+<graphics/>
+<inscription>
+<value>Default,x</value>
+<graphics/>
+</inscription>
+<tagged>
+<value>false</value>
+</tagged>
+<arcpath id="000" x="106" y="137" curvePoint="false"/>
+<arcpath id="001" x="144" y="184" curvePoint="true"/>
+<arcpath id="002" x="192" y="201" curvePoint="false"/>
+<type value="normal"/>
+</arc>
+<arc id="T1 to P2" source="unstack(x,y)" target="holding">
+<graphics/>
+<inscription>
+<value>Default,x</value>
+<graphics/>
+</inscription>
+<tagged>
+<value>false</value>
+</tagged>
+<arcpath id="000" x="305" y="136" curvePoint="false"/>
+<arcpath id="001" x="272" y="186" curvePoint="true"/>
+<arcpath id="002" x="221" y="202" curvePoint="false"/>
+<type value="normal"/>
+</arc>
+<arc id="T1 to P4" source="unstack(x,y)" target="clear">
+<graphics/>
+<inscription>
+<value>Default,y</value>
+<graphics/>
+</inscription>
+<tagged>
+<value>false</value>
+</tagged>
+<arcpath id="000" x="319" y="137" curvePoint="false"/>
+<arcpath id="001" x="381" y="199" curvePoint="true"/>
+<arcpath id="002" x="417" y="204" curvePoint="false"/>
+<type value="normal"/>
+</arc>
+<arc id="T2 to P4" source="putdown(x)" target="clear">
+<graphics/>
+<inscription>
+<value>Default,x</value>
+<graphics/>
+</inscription>
+<tagged>
+<value>false</value>
+</tagged>
+<arcpath id="000" x="101" y="286" curvePoint="false"/>
+<arcpath id="001" x="171" y="346" curvePoint="true"/>
+<arcpath id="002" x="267" y="356" curvePoint="true"/>
+<arcpath id="003" x="362" y="348" curvePoint="true"/>
+<arcpath id="004" x="420" y="299" curvePoint="true"/>
+<arcpath id="005" x="431" y="221" curvePoint="true"/>
+<type value="normal"/>
+</arc>
+<arc id="T3 to P3" source="stack(x,y)" target="on">
+<graphics/>
+<inscription>
+<value>Default,x,y</value>
+<graphics/>
+</inscription>
+<tagged>
+<value>false</value>
+</tagged>
+<arcpath id="000" x="310" y="276" curvePoint="false"/>
+<arcpath id="001" x="311" y="221" curvePoint="false"/>
+<type value="normal"/>
+</arc>
+<arc id="T3 to P4" source="stack(x,y)" target="clear">
+<graphics/>
+<inscription>
+<value>Default,x</value>
+<graphics/>
+</inscription>
+<tagged>
+<value>false</value>
+</tagged>
+<arcpath id="000" x="326" y="282" curvePoint="false"/>
+<arcpath id="001" x="380" y="270" curvePoint="true"/>
+<arcpath id="002" x="423" y="219" curvePoint="true"/>
+<type value="normal"/>
+</arc>
+</net>
+</pnml>

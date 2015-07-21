@@ -1,0 +1,156 @@
+
+Major Milestones:
+
+Spring 2008
+	First prototype, Petri nets/contracts/finite state machines, Java
+Fall 2008
+	html/Selenium IDE
+Summer 2009
+	C#/VB, Excel Interface
+Fall 2009
+	C/C++
+Spring 2010
+	test generation from threat nets
+Fall 2010
+	pthreads
+Spring 2011: access control policies
+	Text format of MID files removed
+	System options re-organized 
+	Test generation from attack trees
+	Combinatorial testing
+June-July 2011
+	JFileList removed (save editing space)
+	Analysis of transition liveness
+August 2011
+	Graphical editor and simulator for Petri nets
+August 2011
+	Support of multiple languages using locale information
+September 2011
+	Support PNML files (with PNML or XML as file extension) from ProM, independent PipePrT editor, and other PN editors
+	Motivation: the test mining research	
+October 2011
+	Random test generator
+December 2011, 0.998
+	MAC OS, Partial order, Pairwise, Deadlock/termination states
+	
+-------------------------------------------------------------------------	
+Changes and bug fixes 
+
+June 20-24, 2011
+	Bug fixes: Transition tree with TransitionCap and for sink events
+	Add analysis of transition liveness
+	Refactor ModelPanel, preparing for graphical editor
+	Remove JFileList and list recently used files in a menu 
+June 28, 2011
+	Refactor MIMPanel into abstract classes and subclasses for different model types
+July 1, 2011
+	FileManager, VerificationManager, TestingManager, and Editor now depend only on KernelFrame, not MainFrame		
+July 20, 2011
+	GUI changes: Model - Console Area; MIM - Methods/Accessors/Mutantors tabs
+August 3, 2011	
+	Pipe3.0 - PrT
+August 10, 2011 bug fix
+    Problem: open a saved test data file and open a new xmid file, the previous test tree is removed and the test code
+    is generated from the tree in the test data file.
+    Fix: XmidEditor constructors - clean up test tree panel if the file being open is not a saved test tree file
+August 14, 2011
+	Graph editor for state machines and threat trees, based on Pipe
+August 17, 2011
+	Simulator for Petri nets and contracts
+August 18, 2011
+	"Petri net" was changed to "Function net"
+August 23-27, 2011
+	Support for English/Chinese, ISTA, Pige, PipePrT
+August 28-29, 2011
+	Table Cell Editor for multi-line cells 
+September 6, 2011
+	Fixed progress dialog - create modal dialog (invisible), create working thread, and then set dialog visible
+September 10, 2011
+	Import PNML file (with PNML or XML as file extension) for such tools as ProM and separate PipePrT net editor 	
+	
+V0.997	
+September 28, 2011		      
+	Arithmetic expressions: =, !=, <, <=, >, >=, +, -
+	Multiple labels on one arc <label1> & <label2>
+September 29, 2011
+	New functions: *, /, %, isOdd, isEven
+	Redefined syntax of number: positive numbers can be in the normal form or in strings; 
+	negative numbers must be represented in strings (conflict with minus)
+October 2, 2011
+	Random test generation for function nets, contracts, and state machines		
+October 3, 2011
+	Configurable test node index. Using this ID may cause time/space problems when the search is deep, e.g., in random generation
+	bug fix: MID.isFirable did not consider negation in precondition or guard condition
+November 20, 2011
+	Bug fix: continuous backtrack for multiple negative preconditions (inhibitor arcs) in Unifier.handleSuccessfulUnification
+	ModelPanelVisualNet.getPrecondition: bidirectional arc, directed arc, inhibitor arc.
+
+V0.998
+12/2, 2011
+	JTable for MAC
+	Minimum rows of spreadsheets
+	Platform independent window size 
+12/15, 2011
+	Total/partial ordering of concurrent/independent firings - results can depend on the ordering of transitions/events and places.
+	Pairwise combinations for applicable transitions (more than two inputs with distinct variables, no negation, no guard condition)
+12/20, 2011
+	Keyword-based testing framework Robot Framework
+12/21, 2011		
+	Color text in keyword annotations 
+	Deadlock/termination state checking and test tree
+	Depth/Breadth-first reachability analysis: cross init/goal states
+12/23, 2011
+	Performance improvement - hashmap for expanded states
+	Progress dialog window can be closed even when it has run out of memory.
+12/16, 2011
+	State coverage is no longer based on round-trip tree.
+1/02/2012
+	Hot keys of function nets
+	Named integers and enumeration of integers (e.g., ON=1) 
+	Negative integers in tokens, arc labels, and guard conditions
+
+V0.999	
+1/03/2012		
+	Hierarchical nets
+1/07/2012
+	Goal tags
+1/09/2012
+	Registration via email
+1/12/12
+	home states - reachability analysis and state coverage tests	
+	
+V1.0	
+1/22/2012
+	logging of simulation traces, which can be used for test generation from given sequences
+1/24/2012
+	online testing via JSON-RPC and XML-RPC
+1/28/2012 
+	Analysis of on-the-fly tests: 
+    State coverage, transition coverage, shortest paths to failure states		
+2/02/2012 
+	Online testing with Selenium WebDriver
+2/03/2012
+	Dummy variables in goal markings 
+2/05/2012
+	Dummy variables are replaced by more general goal specifications (called goal properties)
+	Variables, predicates, and negation are allowed. Such a goal specification is similar to the precondition and guard condition of a transition.
+3/03/2012
+	Cancellation of tree visualization
+	Popup menus for MIM editing (hidden events/conditions, options, objects, methods, accessors, mutators)
+	Bug fix for saving negative tests into test data file	 
+3/04/2012
+	Model checker for assertions P => Q; test generation from counterexamples of assertions
+6/13/2012
+	DATA annotation for importing initial markings from an Excel file
+	Options in simulation control panel: current state and log creation
+	Console window is always visible
+6/17/2012
+	Expressions in guard conditions ("-" for both negative numbers and subtraction)
+6/18/2012
+	or(str1,...,strn), where str is a predicate enclosed in a string
+1/2/2013 - ongoing
+	support for HP Quick Test (UFT)
+9/07/2013
+	PHP
+				
+	

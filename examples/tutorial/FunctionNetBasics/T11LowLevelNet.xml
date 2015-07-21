@@ -1,0 +1,252 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<pnml>
+<net id="Net-One" type="PrT net">
+<tokenclass id="Default" enabled="true" red="0" green="0" blue="0"/>
+<labels x="20" y="322" width="1084" height="265" border="true">
+<text>Function nets are simplified coloured Petri nets or predicate/transition nets. This is an introduction to the simplist form of function nets, called low-level function nets. The elements are as follows:
+(1) places (circles), representing conditions or abstract data (not concerned about contents);
+(2) transitions(rectangles), representing events or actions;
+(3) Arcs between places and transitions, representing control/data flows. 
+    Arcs cannot be drawn from a place to another place or from a transition to another transition.
+    There are three types of arcs: 
+      (a) uni-directional arc from place to transition (input) or from transition to place (output); 
+      (b) bi-directional arc between a place and a transition (input and output); 
+      (c) inhibitor arc from a place to a transition (negative input condition);
+(4) Token, represented by a pair of parenthesis () in textual format (double-click on P1 to see an example) or a solid circle during simulation (click on the "Simulate..." button to see an example). Alternatively, a token in place P can be simply denoted by P in the textual specficiation of a marking (defined below). A place may not contain duplicate tokens.  
+(5) A marking (also called state) is a distribution of tokens in places. It represents one state of the model. There are two ways to define an initial marking, both illustrated in this example. 
+      (a) specify tokens by editing individual places; 
+      (b) use an annotation whose text starts with the keyword "INIT",followed by a list of places that have tokens.  
+(6) Enabled or firable: a transition is said to be enabled or firable only if 
+      (a) each of its input places has one token, and 
+      (b) each of its inhibitor place has no token.
+(7) Firing an enabled transition removes a token from each input place and adds a token to each output place. This leads to a new marking.
+(8) The state space of a model is the set of all markings reachable from the initial markings. </text>
+</labels>
+<labels x="585" y="189" width="108" height="24" border="true">
+<text>INIT P2</text>
+</labels>
+<labels x="729" y="20" width="376" height="41" border="true">
+<text>Note: in this example, two initial markings (states) are specified. One is distributed in individual places (see the token in P1), and the other is specified through annotation "INIT P2"</text>
+</labels>
+<labels x="21" y="21" width="618" height="26" border="true">
+<text>This model represents repetative two-step tasks, where the first step is either T1 or T2 and the second step is T3.  </text>
+</labels>
+<place id="P1">
+<graphics>
+<position x="135.0" y="135.0"/>
+</graphics>
+<name>
+<value>P1</value>
+<graphics>
+<offset x="-17.0" y="17.0"/>
+</graphics>
+</name>
+<initialMarking>
+<value>Default,()</value>
+<graphics>
+<offset x="0.0" y="0.0"/>
+</graphics>
+</initialMarking>
+<capacity>
+<value>0</value>
+</capacity>
+</place>
+<place id="P2">
+<graphics>
+<position x="345.0" y="135.0"/>
+</graphics>
+<name>
+<value>P2</value>
+<graphics>
+<offset x="27.0" y="42.0"/>
+</graphics>
+</name>
+<initialMarking>
+<value>Default,</value>
+<graphics>
+<offset x="0.0" y="0.0"/>
+</graphics>
+</initialMarking>
+<capacity>
+<value>0</value>
+</capacity>
+</place>
+<transition id="T1">
+<graphics>
+<position x="225.0" y="90.0"/>
+</graphics>
+<name>
+<value>T1</value>
+<graphics>
+<offset x="42.0" y="7.0"/>
+</graphics>
+</name>
+<orientation>
+<value>0</value>
+</orientation>
+<guard>
+<value/>
+</guard>
+<effect>
+<value/>
+</effect>
+<rate>
+<value>1.0</value>
+</rate>
+<timed>
+<value>true</value>
+</timed>
+<infiniteServer>
+<value>false</value>
+</infiniteServer>
+<priority>
+<value>1</value>
+</priority>
+</transition>
+<transition id="T2">
+<graphics>
+<position x="225.0" y="180.0"/>
+</graphics>
+<name>
+<value>T2</value>
+<graphics>
+<offset x="48.0" y="30.0"/>
+</graphics>
+</name>
+<orientation>
+<value>0</value>
+</orientation>
+<guard>
+<value/>
+</guard>
+<effect>
+<value/>
+</effect>
+<rate>
+<value>1.0</value>
+</rate>
+<timed>
+<value>true</value>
+</timed>
+<infiniteServer>
+<value>false</value>
+</infiniteServer>
+<priority>
+<value>1</value>
+</priority>
+</transition>
+<transition id="T3">
+<graphics>
+<position x="465.0" y="135.0"/>
+</graphics>
+<name>
+<value>T3</value>
+<graphics>
+<offset x="-5.0" y="35.0"/>
+</graphics>
+</name>
+<orientation>
+<value>0</value>
+</orientation>
+<guard>
+<value/>
+</guard>
+<effect>
+<value/>
+</effect>
+<rate>
+<value>1.0</value>
+</rate>
+<timed>
+<value>true</value>
+</timed>
+<infiniteServer>
+<value>false</value>
+</infiniteServer>
+<priority>
+<value>1</value>
+</priority>
+</transition>
+<arc id="P1 to T1" source="P1" target="T1">
+<graphics/>
+<inscription>
+<value>Default,</value>
+<graphics/>
+</inscription>
+<tagged>
+<value>false</value>
+</tagged>
+<arcpath id="000" x="160" y="140" curvePoint="false"/>
+<arcpath id="001" x="231" y="102" curvePoint="false"/>
+<type value="normal"/>
+</arc>
+<arc id="P1 to T2" source="P1" target="T2">
+<graphics/>
+<inscription>
+<value>Default,</value>
+<graphics/>
+</inscription>
+<tagged>
+<value>false</value>
+</tagged>
+<arcpath id="000" x="160" y="154" curvePoint="false"/>
+<arcpath id="001" x="231" y="192" curvePoint="false"/>
+<type value="normal"/>
+</arc>
+<arc id="P2 to T3" source="P2" target="T3">
+<graphics/>
+<inscription>
+<value>Default,</value>
+<graphics/>
+</inscription>
+<tagged>
+<value>false</value>
+</tagged>
+<arcpath id="000" x="371" y="147" curvePoint="false"/>
+<arcpath id="001" x="471" y="147" curvePoint="false"/>
+<type value="normal"/>
+</arc>
+<arc id="T1 to P2" source="T1" target="P2">
+<graphics/>
+<inscription>
+<value>Default,</value>
+<graphics/>
+</inscription>
+<tagged>
+<value>false</value>
+</tagged>
+<arcpath id="000" x="241" y="102" curvePoint="false"/>
+<arcpath id="001" x="343" y="141" curvePoint="false"/>
+<type value="normal"/>
+</arc>
+<arc id="T2 to P2" source="T2" target="P2">
+<graphics/>
+<inscription>
+<value>Default,</value>
+<graphics/>
+</inscription>
+<tagged>
+<value>false</value>
+</tagged>
+<arcpath id="000" x="241" y="192" curvePoint="false"/>
+<arcpath id="001" x="343" y="152" curvePoint="false"/>
+<type value="normal"/>
+</arc>
+<arc id="T3 to P1" source="T3" target="P1">
+<graphics/>
+<inscription>
+<value>Default,</value>
+<graphics/>
+</inscription>
+<tagged>
+<value>false</value>
+</tagged>
+<arcpath id="000" x="481" y="147" curvePoint="false"/>
+<arcpath id="001" x="535" y="193" curvePoint="true"/>
+<arcpath id="002" x="452" y="247" curvePoint="true"/>
+<arcpath id="003" x="197" y="247" curvePoint="true"/>
+<arcpath id="004" x="145" y="161" curvePoint="true"/>
+<type value="normal"/>
+</arc>
+</net>
+</pnml>
