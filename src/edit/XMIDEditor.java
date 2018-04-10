@@ -30,7 +30,7 @@ import testcode.TargetLanguage;
 import utilities.FileUtil;
 import parser.ParseException;
 import pipeprt.gui.CreateGui;
-
+import mid.ABACIntegrationManager;
 import mid.MID;
 
 public class XMIDEditor extends GeneralEditor implements TableModelListener{
@@ -56,6 +56,7 @@ public class XMIDEditor extends GeneralEditor implements TableModelListener{
 		modelPanel = createModelPanel();
 		if (modelType==ModelType.ABAC) {
 			accessControlPanel = new AccessControlPanel(this);
+			 
 		}
 		mimPanel = createMIMPanel(kernel.getSystemOptions().getLanguage());
 		helperCodePanel = new HelperCodePanel(this, kernel.getSystemOptions().getLanguage());
@@ -90,6 +91,8 @@ public class XMIDEditor extends GeneralEditor implements TableModelListener{
 		modelPanel = createModelPanel(modelSheet);
 		if (modelType==ModelType.ABAC) {
 			accessControlPanel = new AccessControlPanel(this, modelSheet);
+			 
+			
 		}
 		mimPanel = createMIMPanel(kernel.getSystemOptions().getLanguage(), mimSheet);
 		helperCodePanel = helperCodeSheet != null? new HelperCodePanel(this,  kernel.getSystemOptions().getLanguage(), helperCodeSheet): 
@@ -178,6 +181,7 @@ public class XMIDEditor extends GeneralEditor implements TableModelListener{
 			switch (modelType){
 			case FUNCTIONNET:
 			case ABAC:
+				
 			case CONTRACT:
 			case THREATNET:
 				return MIMPanelNet.createMIMPanel(this, language, sheet);
@@ -390,16 +394,59 @@ public class XMIDEditor extends GeneralEditor implements TableModelListener{
 	public MID parse(){
 		MID mid = new MID();
 		try {
+			mid.getTransitions();
+			modelPanel.parse(mid);
+			mid.getTransitionNames();
+			if (modelType==ModelType.THREATNET && !mid.hasAttackTransition()){
+				kernel.printDialogMessage(LocaleBundle.bundleString("One or more attack transitions should be specified"));
+		   		return null;
+			}
+			mimPanel.parse(mid);
+			 ABACIntegrationManager aBACIntegrationManager = new ABACIntegrationManager(mid);
+			 aBACIntegrationManager.setABACModelType(false);
+			if (modelType==ModelType.ABAC) {
+				accessControlPanel.parse(mid);
+				//Samer Khamaiseh
+			    aBACIntegrationManager.integrateABACRulesWithFunctionalModel();
+			    aBACIntegrationManager.setABACModelType(true);
+			    
+			   //samer khamaiseh
+				// here the update will be.
+			}
+			helperCodePanel.parse(mid);
+			mid.setFileName(midFile.getAbsolutePath());
+		  	String errorMessage = mid.findErrors();
+		   	if (errorMessage!=null){
+		   		printInConsoleArea(errorMessage);
+		   		return null;
+		   	}
+		   	
+		   	
+		   	
+		   	if (Kernel.IS_DEBUGGING_MODE){
+		   		printInConsoleArea(mid+"\n");
+		   		printInConsoleArea(LocaleBundle.bundleString("Number of transitions")+": "+mid.getTransitions().size()+"; "
+		   				+LocaleBundle.bundleString("Number of places")+": "+mid.getPlaces().size());
+		   	}
+		}
+		catch (ParseException exception){
+			printInConsoleArea(LocaleBundle.bundleString("Error")+": "+exception.toString().replace("parser.ParseException:", ""));
+			Toolkit.getDefaultToolkit().beep();
+			mid = null;
+		}
+		System.out.println(mid.toString());
+		return mid;	
+	}
+
+	public MID parseModel(){
+		MID mid = new MID();
+		try {
+			
 			modelPanel.parse(mid);
 			if (modelType==ModelType.THREATNET && !mid.hasAttackTransition()){
 				kernel.printDialogMessage(LocaleBundle.bundleString("One or more attack transitions should be specified"));
 		   		return null;
 			}
-			if (modelType==ModelType.ABAC) {
-				accessControlPanel.parse(mid);
-			}
-			mimPanel.parse(mid);
-			helperCodePanel.parse(mid);
 			mid.setFileName(midFile.getAbsolutePath());
 		  	String errorMessage = mid.findErrors();
 		   	if (errorMessage!=null){
@@ -419,33 +466,27 @@ public class XMIDEditor extends GeneralEditor implements TableModelListener{
 		}
 		return mid;	
 	}
-
-	public MID parseModel(){
-		MID mid = new MID();
-		try {
-			modelPanel.parse(mid);
-			if (modelType==ModelType.THREATNET && !mid.hasAttackTransition()){
-				kernel.printDialogMessage(LocaleBundle.bundleString("One or more attack transitions should be specified"));
-		   		return null;
-			}
-			mid.setFileName(midFile.getAbsolutePath());
-		  	String errorMessage = mid.findErrors();
-		   	if (errorMessage!=null){
-		   		printInConsoleArea(errorMessage);
-		   		return null;
-		   	}
-		   	if (Kernel.IS_DEBUGGING_MODE){
-		   		printInConsoleArea(mid+"\n");
-		   		printInConsoleArea(LocaleBundle.bundleString("Number of transitions")+": "+mid.getTransitions().size()+"; "
-		   				+LocaleBundle.bundleString("Number of places")+": "+mid.getPlaces().size());
-		   	}
-		}
-		catch (ParseException exception){
-			printInConsoleArea(LocaleBundle.bundleString("Error")+": "+exception.toString().replace("parser.ParseException:", ""));
-			Toolkit.getDefaultToolkit().beep();
-			mid = null;
-		}
-		return mid;	
+	
+	/**
+	 * This method responsible of getting the XML file that represents the 
+	 * PrT model, FSM and others.
+	 * @return XML file
+	 * @author Samer Khamaiseh
+	 */
+	public File getXMLModelFile(){
+		return this.separateModelFile;
+	}
+	
+	/**
+	 * @author Samer Khamaiseh
+	 * @return 
+	 * 
+	 * return true if the ABAC model panel selected by the user.
+	 */
+	public boolean isABACPanelSleceted(){
+		
+		return editTabbedPane.getSelectedComponent() == accessControlPanel;		
+		
 	}
 
 }

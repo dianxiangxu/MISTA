@@ -27,6 +27,7 @@ public class GeneralTableModel extends AbstractTableModel {
 	private int totalColumnCount;
 	private int visibleColumnCount;
 	
+	// Column name
 	public GeneralTableModel(Vector<Vector<Object>> data, String[] columnNames, int totalColumnCount, boolean editable){
 		this.data = data; 
 		this.columnNames = new String[columnNames.length];

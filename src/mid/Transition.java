@@ -5,10 +5,9 @@ package mid;
 import java.io.Serializable;
 import java.util.ArrayList;
 
-import parser.ParseException;
-
 import kernel.Kernel;
 import locales.LocaleBundle;
+import parser.ParseException;
 
 
 public class Transition implements Serializable {
@@ -365,4 +364,6 @@ public class Transition implements Serializable {
 		
 		return str.toString();
 	}
+	
+	
 }

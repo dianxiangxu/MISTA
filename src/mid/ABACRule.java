@@ -11,15 +11,19 @@ public class ABACRule {
 	private ArrayList<Predicate> resourceCondition;      
 	private ArrayList<Predicate> environmentCondition;      
 	private ArrayList<Predicate> obligations;
+	
+	// added by samer khamaiseh
+	private Integer ruleNumber;
 
 	public ABACRule(String effectString, ArrayList<Predicate> subjectCondition, ArrayList<Predicate> actionCondition, 
-			ArrayList<Predicate> resourceCondition, ArrayList<Predicate> environmentCondition, ArrayList<Predicate> obligations){
+			ArrayList<Predicate> resourceCondition, ArrayList<Predicate> environmentCondition, ArrayList<Predicate> obligations,String ruleNumber){
 		effect = effectString.equalsIgnoreCase("permit")? EffectType.PERMIT: EffectType.DENY;
 		this.subjectCondition = subjectCondition;
 		this.actionCondition = actionCondition;
 		this.resourceCondition = resourceCondition;
 		this.environmentCondition = environmentCondition;
 		this.obligations = obligations;
+		this.ruleNumber = Integer.valueOf(ruleNumber);
 	}
 	
 	public static boolean isLegalEffect(String effectString){
@@ -48,5 +52,16 @@ public class ABACRule {
 
 	public ArrayList<Predicate> getObligtions(){
 		return obligations;
+	}
+	
+	/**
+	 * @author Samer Khamaiseh
+	 * @return rule number from the rule table
+	 */
+	public Integer getRuleNumber(){
+		
+		return this.ruleNumber;
+		
+		
 	}
 }

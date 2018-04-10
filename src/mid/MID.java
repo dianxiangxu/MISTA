@@ -8,12 +8,9 @@ import java.io.Serializable;
 import java.util.*;
 
 import kernel.Kernel;
-
 import locales.LocaleBundle;
-
 import parser.MIDParser;
 import pipeprt.dataLayer.PipeTransition;
-
 import testcode.TargetLanguage;
 import testcode.TargetLanguageOO;
 import utilities.FileUtil;
@@ -183,6 +180,22 @@ public class MID implements Serializable {
     
     public ArrayList<Transition> getTransitions(){
     	return transitions;
+    }
+    
+    /**
+     * @author Samer Khamaiseh
+     * @return
+     */
+    public ArrayList<String> getTransitionNames(){
+    	
+    	ArrayList<String> transitionsNames = new ArrayList<String>();
+    	
+    	for (Iterator <Transition> iterator = transitions.iterator(); iterator.hasNext();) {
+			Transition transition = iterator.next();
+			transitionsNames.add(transition.getEvent());
+		}
+    	
+    	return transitionsNames;
     }
 
     public void setTransitions(ArrayList<Transition> transitions){
@@ -526,6 +539,17 @@ public class MID implements Serializable {
 
 	public boolean attributeExists(ABACAttribute attribute){
 		return attributes.get(attribute.getName())!=null;
+	}
+	
+	/**
+	 * Get the ABAC attribute by name
+	 * @param attributeName
+	 * @author Samer khamaiseh
+	 */
+	public ABACAttribute getABACAttributeByName(String attributeName){
+		
+		return attributes.get(attributeName.trim());
+		
 	}
 	
 	public ArrayList<ABACRule> getRules(){
@@ -1420,7 +1444,21 @@ public class MID implements Serializable {
 			int numberOfArguments = transitions.get(0).getNumberOfArguments();
 			if (predicate.arity()!=numberOfArguments)
 				return LocaleBundle.bundleString("Method specification")+": "+predicate+" "+"has inconsistent number of arguments";
+			
+			//Samer Khamaiseh
+			if(ABACIntegrationManager.isABACModelType()){
+				String predicateName = predicate.getName();
+				String operator = method.getOperator();
+				if(predicateName.contains(ABACIntegrationManager.ABAC_TRANSITION_PREFIX)){
+					if(operator.isEmpty() || operator.equals(" ")){
+						return LocaleBundle.bundleString("Method specification")+": "+predicate+" "+" has Missing code block ";
+					}
+				}
+				
+			}
+			
 		}
+		
 		return null;
 	}
 	
@@ -1693,4 +1731,5 @@ public class MID implements Serializable {
 
 		return str.toString();
 	}
+	
 }

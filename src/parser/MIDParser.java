@@ -1603,7 +1603,7 @@ System.out.println(var);
         Predicate predicate;
         ArrayList<Predicate> condition = new ArrayList<Predicate>();
     predicate = PredicateSpecification();
-                                                 condition.add(predicate);
+    condition.add(predicate);
     label_13:
     while (true) {
       switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {

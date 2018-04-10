@@ -3,9 +3,11 @@ package edit;
 import java.awt.BorderLayout;
 import java.awt.Font;
 import java.awt.event.MouseAdapter;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Vector;
 
+import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.JSplitPane;
@@ -23,7 +25,6 @@ import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Sheet;
 
 import edit.GeneralTablePanel.MIDTableType;
-
 import parser.MIDParser;
 import parser.ParseException;
 
@@ -52,9 +53,12 @@ public class AccessControlPanel extends JPanel implements DocumentListener{
 		ruleRows = new Vector<Vector<Object>>();
 		ruleTablePanel = GeneralTablePanel.createRuleTablePanel(editor, ruleRows);
 		ruleTablePanel.setMinRows(MINROWS_RULES);
-
+		
 		createAccessControlPanel();
 	}
+	
+	
+	
 	
 	public AccessControlPanel(XMIDEditor editor, Sheet sheet){
 		this.editor = editor;
@@ -69,6 +73,7 @@ public class AccessControlPanel extends JPanel implements DocumentListener{
 		ruleTablePanel.setMinRows(MINROWS_RULES);
 		
 		createAccessControlPanel();
+		//File xmlfile = editor.getXMLModelFile();
 	}
 
 	private void createAccessControlPanel(){
@@ -81,9 +86,11 @@ public class AccessControlPanel extends JPanel implements DocumentListener{
         setLayout(new BorderLayout());
         add(wholePane, BorderLayout.CENTER);
         this.addMouseListener(mouseAdapter);
+   
 	}
 	
 	
+
 	private JPanel createUpperPane(){
 		JPanel tablePanel = new JPanel();
 		tablePanel.setLayout(new BorderLayout());
@@ -119,8 +126,11 @@ public class AccessControlPanel extends JPanel implements DocumentListener{
 	public void parse(MID mid) throws ParseException {
 		parseAttributeRows(mid);
 		parseRuleRows(mid);
+		// here the code will be....
 	}
 	
+	
+	/// parse the first table.
 	private void parseAttributeRows(MID mid) throws ParseException{
 		for (int index=0; index<attributeRows.size(); index++){
 			Vector<Object> row = attributeRows.get(index);
@@ -129,20 +139,27 @@ public class AccessControlPanel extends JPanel implements DocumentListener{
 			String rowInfo = LocaleBundle.bundleString("Attribute Row")+" "+(index+1)+" - ";
 			if (row.get(1)==null || row.get(1).toString().trim().equals(""))
 				throw new ParseException(rowInfo+LocaleBundle.bundleString("attribute name is expected"));				
-			String name = row.get(1).toString();
+			String name = row.get(2).toString().trim(); // *  Updated By Samer Khamaiseh
 			if (!MIDParser.isIdentifier(name)) {
 				throw new ParseException(rowInfo+LocaleBundle.bundleString("attribute name should be an identifier"));				
 			}
-			String type = row.get(2)!=null? row.get(2).toString(): "";
+			
+			/*
+			 *  Updated By Samer Khamaiseh
+			 *  Date : 3/21/2017.
+			 *  the problem is that the string data type of the ABAC attribute is taken from row 2 where it should be taken from row 3
+			 */
+			
+			String type = row.get(3)!=null? row.get(3).toString(): "";
 			if (!isLegalDataType(type)) {
 				throw new ParseException(rowInfo+LocaleBundle.bundleString("incorrect data type"));				
 			}
-			String values = row.get(3)!=null? row.get(3).toString(): "";
+			String values = row.get(4)!=null? row.get(4).toString(): "";
 			String[] valueList = values.split(",\\s");
 			if (!checkValueList(type, valueList)) {
 				throw new ParseException(rowInfo+LocaleBundle.bundleString("incorrect values"));								
 			}
-			ABACAttribute attribute = new ABACAttribute(name, type, valueList);
+			ABACAttribute attribute = new ABACAttribute(name, type.trim(), valueList);
 			if (mid.attributeExists(attribute)) {
 				throw new ParseException(rowInfo+LocaleBundle.bundleString("duplicate attribute"));								
 			} else {
@@ -183,6 +200,7 @@ public class AccessControlPanel extends JPanel implements DocumentListener{
 		return true;
 	}
 	
+	// Parse the second table.
 	private void parseRuleRows(MID mid) throws ParseException{
 		for (int index=0; index<ruleRows.size(); index++){
 			Vector<Object> row = ruleRows.get(index);
@@ -196,6 +214,8 @@ public class AccessControlPanel extends JPanel implements DocumentListener{
 				throw new ParseException(rowInfo+LocaleBundle.bundleString("incorrect rule effect"));				
 			}
 			try {
+				// this line of code added by Samer to include the rule number
+				String ruleNumber = row.get(0)!=null? row.get(0).toString(): "";
 				String subjectConditionString = row.get(2)!=null? row.get(2).toString(): "";
 				ArrayList<Predicate> subjectCondition = MIDParser.parseConditionString(subjectConditionString);  
 				String actionConditionString = row.get(3)!=null? row.get(3).toString(): "";
@@ -206,7 +226,7 @@ public class AccessControlPanel extends JPanel implements DocumentListener{
 				ArrayList<Predicate> environmentCondition = MIDParser.parseConditionString(environmentConditionString);      
 				String obligationString = row.get(6)!=null? row.get(6).toString(): "";
 				ArrayList<Predicate> obligations = MIDParser.parseConditionString(obligationString);
-				ABACRule rule = new ABACRule(effectString, subjectCondition, actionCondition, resourceCondition, environmentCondition, obligations);
+				ABACRule rule = new ABACRule(effectString, subjectCondition, actionCondition, resourceCondition, environmentCondition, obligations,ruleNumber);
 				mid.addRule(rule);
 			}
 			catch (Exception e) {

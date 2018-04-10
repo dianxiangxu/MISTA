@@ -22,6 +22,15 @@ public class Predicate implements Serializable {
 	public String getName() {
          return name;
 	}
+	
+	/**
+	 * @author Samer Khamaiseh
+	 * @param aurgments
+	 */
+	public void setAurgment(ArrayList<String> args){
+		this.arguments.clear();
+		this.arguments.addAll(args);
+	}
 
 	public ArrayList<String> getArguments() {
          return arguments;

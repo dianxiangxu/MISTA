@@ -317,6 +317,7 @@ public class FileManager implements ActionListener{
 			saveAsFile();
 		else
 			saveFile(workingFile, NODIALOG);
+		
 	}
 	
 	public void saveFile(String filePath, boolean hasDialog) {

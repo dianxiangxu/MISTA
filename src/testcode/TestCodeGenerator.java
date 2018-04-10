@@ -16,7 +16,7 @@ import testgeneration.TransitionTreeNode;
 import kernel.CancellationException;
 import kernel.Kernel;
 import kernel.SystemOptions;
-
+import kernel.SystemOptions.ModelType;
 import mid.MID;
 import mid.Mapping;
 import mid.Marking;
@@ -45,6 +45,7 @@ public abstract class TestCodeGenerator {
 		this.transitionTree = transitionTree;
 		this.mid = transitionTree.getMID();
 		this.systemOptions = transitionTree.getSystemOptions();
+		
 	}
 	
 	public static TestCodeGenerator createCodeGenerator(TransitionTree transitionTree){
@@ -53,6 +54,7 @@ public abstract class TestCodeGenerator {
 		assert transitionTree.getSystemOptions()!=null;			
 		assert transitionTree.getSystemOptions().getLanguage()!=null;
 		
+         
 		if (transitionTree.getSystemOptions().isOOLanguage()){ 
 			if (transitionTree instanceof TransitionTreeForThreatNet || !transitionTree.getSystemOptions().createObjectReference())
 				return new TestCodeGeneratorOOSystem(transitionTree);

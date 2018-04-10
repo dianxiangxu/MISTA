@@ -311,6 +311,7 @@ public class TestingManager implements ActionListener {
 	
 	private TransitionTree openFileForTestGeneration(){
 		MID mid = kernel.getFileManager().parse();
+		mid.getTransitions();
 		if (mid==null)
 			return null;
 //System.out.println(mid);		

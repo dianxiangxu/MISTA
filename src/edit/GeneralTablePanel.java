@@ -8,6 +8,8 @@ import java.awt.Component;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -15,6 +17,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Vector;
 
+import javax.swing.DefaultCellEditor;
+import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
@@ -29,7 +33,7 @@ import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 
 import locales.LocaleBundle;
-
+import mid.MID;
 import testcode.TargetLanguage;
 
 public class GeneralTablePanel extends JPanel implements ActionListener, ListSelectionListener{
@@ -87,7 +91,6 @@ public class GeneralTablePanel extends JPanel implements ActionListener, ListSel
 		table = System.getProperty("os.name").contains("Mac")? new JTableMac(tableModel): new JTable(tableModel);
 		table.getTableHeader().setFont(GeneralEditor.titleFont);
 		table.getTableHeader().setForeground(GeneralEditor.titleColor);
-
 		// align headers of all columns
 		TableCellRenderer rendererFromHeader = table.getTableHeader().getDefaultRenderer();
 		JLabel headerLabel = (JLabel)rendererFromHeader;
@@ -145,8 +148,16 @@ public class GeneralTablePanel extends JPanel implements ActionListener, ListSel
 	    	typeColumn.setCellEditor(new TextAreaCellEditor(table.getFont(), new ArrayList<String>(Arrays.asList(TYPES)), false));
 	    } else 
 	    if (tableType==MIDTableType.RULE){
+	        
 	    	TableColumn effectColumn = table.getColumnModel().getColumn(1);
 	    	effectColumn.setCellEditor(new TextAreaCellEditor(table.getFont(), new ArrayList<String>(Arrays.asList(EFFECTS)), false));
+	    	
+	    	// This code added by Samer Khamaiseh to enable suggestion of the transitions for the Effect column.
+	    	if(editor.isABACPanelSleceted() && editor.parseModel() !=null ){
+	    		effectColumn= table.getColumnModel().getColumn(3);
+	    		effectColumn.setCellEditor(new TextAreaCellEditor(table.getFont(),editor.parseModel().getEvents(), false));
+	    	}
+	    		
 	    }
 
 	    if (editor.isEditing())
@@ -171,10 +182,12 @@ public class GeneralTablePanel extends JPanel implements ActionListener, ListSel
 		return new GeneralTablePanel(editor, tableType, data, getColumnNames(tableType), functionNetColumnNames.length);
 	}
 
+	// Update the panel
 	public static GeneralTablePanel createAttributeTablePanel(XMIDEditor editor,  Vector<Vector<Object>> data){
 		return new GeneralTablePanel(editor, MIDTableType.ATTRIBUTE, data, attributeColumnNames, attributeColumnNames.length);
 	}
 
+	// Update the panel
 	public static GeneralTablePanel createRuleTablePanel(XMIDEditor editor,  Vector<Vector<Object>> data){
 		return new GeneralTablePanel(editor, MIDTableType.RULE, data, ruleColumnNames, ruleColumnNames.length);
 	}
@@ -414,5 +427,7 @@ public class GeneralTablePanel extends JPanel implements ActionListener, ListSel
 				setToPreferredRowHeight(row);
 		}
 	}
+
+
 	
 }

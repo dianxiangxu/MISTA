@@ -1,6 +1,7 @@
 package edit;
 
 import java.awt.BorderLayout;
+import java.awt.Component;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Hashtable;
@@ -14,7 +15,6 @@ import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Sheet;
 
 import edit.GeneralEditor.SimulatorType;
-
 import locales.LocaleBundle;
 import mid.AssertionProperty;
 import mid.ExcelTestDataLoader;
@@ -24,7 +24,6 @@ import mid.Predicate;
 import mid.GoalProperty;
 import mid.Transition;
 import mid.Tuple;
-
 import parser.MIDParser;
 import parser.ParseException;
 import parser.TokenMgrError;
@@ -65,6 +64,7 @@ public class ModelPanelVisualNet extends ModelPanel implements VisualModelInterf
 		return editor.createModelMenu(mainNet.getPrTMenu());
 	}
 
+	/////// SEE THis SAMER.......   .....  ....   ....  .... ... .. 
 	@Override
 	public void parse(MID mid) throws ParseException {
 		if (editor.getKernel().getSystemOptions().isNetHierarchyEnabled() &&
